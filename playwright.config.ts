@@ -15,7 +15,7 @@ export default defineConfig({
 		launchOptions: executablePath === undefined ? {} : {executablePath},
 	},
 	webServer: {
-		command: 'bun run build && bunx vite preview --host 127.0.0.1 --port 4173 --strictPort',
+		command: 'bun run build && PORT=4173 HOST=127.0.0.1 bun run preview',
 		url: 'http://127.0.0.1:4173',
 		reuseExistingServer: !process.env.CI,
 	},
