@@ -8,7 +8,7 @@ const boards: Readonly<Record<Difficulty, {readonly columns: number; readonly ro
 	insane: {columns: 6, rows: 5, holdMs: 1_800},
 };
 export const circleDefaults: CircleAmongSquaresConfig = {
-	mode: 'circle-among-squares', rounds: 5, roundMs: 20_000, countdownMs: 3_000,
+	mode: 'circle-among-squares', roundMs: 20_000, countdownMs: 3_000,
 	gap: [250, 500], difficulty: 'easy',
 };
 const isCircleConfig = function(config: Config): config is CircleAmongSquaresConfig {

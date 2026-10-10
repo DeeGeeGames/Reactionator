@@ -6,7 +6,6 @@ export type GlyphShape = 'square' | 'circle';
 export interface GlyphCell { readonly shape: GlyphShape }
 export interface SharedConfig {
 	readonly mode: string;
-	readonly rounds: number;
 	readonly roundMs: number;
 	readonly countdownMs: number;
 	readonly gap: readonly [number, number];
@@ -120,15 +119,14 @@ const copyRange = function(range: readonly [number, number]): readonly [number, 
 	if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) invalid();
 	return [min, max];
 };
-export const validateShared = function(config: SharedConfig): Pick<SharedConfig, 'rounds' | 'roundMs' | 'countdownMs' | 'gap'> {
-	if (!Number.isInteger(config.rounds) || config.rounds < 1
-		|| !Number.isFinite(config.roundMs) || config.roundMs <= 0
+export const validateShared = function(config: SharedConfig): Pick<SharedConfig, 'roundMs' | 'countdownMs' | 'gap'> {
+	if (!Number.isFinite(config.roundMs) || config.roundMs <= 0
 		|| !Number.isFinite(config.countdownMs) || config.countdownMs <= 0) invalid();
-	return {rounds: config.rounds, roundMs: config.roundMs, countdownMs: config.countdownMs, gap: copyRange(config.gap)};
+	return {roundMs: config.roundMs, countdownMs: config.countdownMs, gap: copyRange(config.gap)};
 };
 export const validateConfig = function(config: Config): Config { return requireMode(config.mode).validate(config); };
 export const defaults: PressOnWhiteConfig = {
-	mode: 'press-on-white', rounds: 5, roundMs: 20_000, countdownMs: 3_000,
+	mode: 'press-on-white', roundMs: 20_000, countdownMs: 3_000,
 	gap: [250, 500], appearance: [700, 1400], probabilities: [0.25, 0.25, 0.25, 0.25],
 };
 export const roster = function(count: number): readonly Player[] {

@@ -41,7 +41,6 @@ button:disabled { cursor: default; }
 .rules { text-align: left; font-size: 12px; line-height: 1.4; border-left: 2px solid #505464; padding-left: 12px; margin: 16px auto; max-width: 370px; }
 .rules p { margin: 7px 0; }
 .actions, .choices { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
-.mode-choices .action { flex: 1 1 120px; max-width: 230px; }
 .actions { margin-top: 14px; }
 .action { min-height: 44px; padding: 10px 14px; border: 1px solid #4b5061; background: var(--surface); color: #f1f1f4; border-radius: 8px; font-size: 13px; }
 .action[aria-pressed='true'] { border-color: var(--p1); color: var(--p1); background: #262139; }
@@ -125,11 +124,9 @@ button:disabled { cursor: default; }
 	.table[data-phase='setup'] .center { max-width: 500px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
 	.table[data-phase='setup'] .near-text { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; align-items: center; }
 	.table[data-phase='setup'] .eyebrow, .table[data-phase='setup'] .title, .table[data-phase='setup'] .description { grid-column: 1 / -1; }
-	.table[data-phase='setup'] .mode-choices { grid-column: 1; grid-row: 4; flex-direction: column; gap: 6px; }
-	.table[data-phase='setup'] .mode-choices .action { flex: auto; max-width: none; }
-	.table[data-phase='setup'] .rules { grid-column: 2; grid-row: 4 / 6; }
-	.table[data-phase='setup'] .choices:not(.mode-choices) { grid-column: 1; grid-row: 5; gap: 4px; margin-top: 6px; }
-	.table[data-phase='setup'] .choices:not(.mode-choices) .action { padding: 10px 6px; font-size: 11px; }
+	.table[data-phase='setup'] .rules { grid-column: 2; grid-row: 4; }
+	.table[data-phase='setup'] .choices { grid-column: 1; grid-row: 4; gap: 4px; margin-top: 6px; }
+	.table[data-phase='setup'] .choices .action { padding: 10px 6px; font-size: 11px; }
 	.table[data-phase='setup'] .title { font-size: 24px; margin-bottom: 6px; }
 	.table[data-phase='setup'] .eyebrow { margin-bottom: 4px; }
 	.table[data-phase='setup'] .rules { margin: 6px auto; font-size: 10px; }
@@ -138,6 +135,9 @@ button:disabled { cursor: default; }
 	.table[data-phase='setup'] .actions { grid-column: 1; grid-row: 2; margin-top: 4px; justify-content: flex-end; }
 	.table[data-phase='setup'] .toolbar { grid-column: 2; grid-row: 2; margin-top: 4px; justify-content: flex-start; }
 	.table[data-phase='setup'] .hint { grid-column: 1 / -1; grid-row: 3; margin-top: 4px; }
+}
+@media (max-height: 360px) and (orientation: landscape) {
+	.table[data-phase='countdown'] .countdown { font-size: 28px; margin: 2px 0; }
 }
 @media (max-height: 560px) and (orientation: portrait) {
 	:root { --pad-height: 104px; }

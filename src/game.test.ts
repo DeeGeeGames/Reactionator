@@ -7,7 +7,7 @@ const shownColor = function(stimulus: Stimulus | null): Color | null {
 };
 const fixture = function(overrides: Partial<Omit<PressOnWhiteConfig, 'mode'>> = {}, random: () => number = () => 0) {
 	let time = 0;
-	const game = new Game(() => time, random, {...defaults, ...overrides});
+	const game = new Game(() => time, random, {rounds: 5, modes: [{...defaults, ...overrides}]});
 	return {game, advance: function(ms: number, frame = true) { time += ms; if (frame) game.frame(); }};
 };
 const begin = function(game: Game, advance: (ms: number) => void, count = 4) {
@@ -17,7 +17,7 @@ const begin = function(game: Game, advance: (ms: number) => void, count = 4) {
 };
 describe('configuration and score boundary', function() {
 	test('rejects invalid configuration and roster', function() {
-		for (const config of [{...defaults, roundMs: NaN}, {...defaults, rounds: 0}, {...defaults, gap: [0, 2] as const}, {...defaults, probabilities: [0, 0, 0, 0] as const}]) {
+		for (const config of [{...defaults, roundMs: NaN}, {...defaults, gap: [0, 2] as const}, {...defaults, probabilities: [0, 0, 0, 0] as const}]) {
 			expect(() => validateConfig(config)).toThrow();
 		}
 		expect(() => roster(1)).toThrow();

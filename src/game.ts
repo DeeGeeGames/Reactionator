@@ -1,5 +1,10 @@
-import {defaults, emptyScores, reduceScore, requireMode, roster, validateConfig, type Config, type Player, type RuntimeMode, type Scores, type Stimulus} from './mode';
-import {defaultConfigFor, loadModes} from './modes';
+import {emptyScores, reduceScore, requireMode, roster, validateConfig, type Config, type Player, type RuntimeMode, type Scores, type Stimulus} from './mode';
+import {defaultConfigFor, drawMode, listPlayableModes} from './modes';
+export const DEFAULT_ROUNDS = 10;
+export interface MatchConfig {
+	readonly rounds: number;
+	readonly modes: readonly Config[];
+}
 export type Phase = 'setup' | 'ready' | 'countdown' | 'playing' | 'round-results' | 'match-results' | 'paused';
 export interface GameState {
 	readonly phase: Phase;
@@ -14,8 +19,9 @@ export interface GameState {
 	readonly pauseReason: string;
 }
 export class Game {
-	readonly config: Config;
-	readonly mode: RuntimeMode;
+	readonly match: MatchConfig;
+	private configValue: Config;
+	private remainingModes: readonly Config[] = [];
 	private readonly clock: () => number;
 	private readonly random: () => number;
 	private stateValue: GameState;
@@ -25,16 +31,24 @@ export class Game {
 	private session = 0;
 	private identity = 0;
 	private sequence = 0;
-	constructor(clock: () => number, random: () => number, config: Config = defaults) {
-		loadModes();
+	constructor(clock: () => number, random: () => number, config: MatchConfig = {
+		rounds: DEFAULT_ROUNDS, modes: listPlayableModes().map(function(mode) { return defaultConfigFor(mode.id); }),
+	}) {
+		if (!Number.isSafeInteger(config.rounds) || config.rounds < 1) throw new Error('Invalid round count');
+		const modes = config.modes.map(validateConfig);
+		const first = modes[0];
+		if (first === undefined) throw new Error('No playable modes');
+		if (new Set(modes.map(function(mode) { return mode.mode; })).size !== modes.length) throw new Error('Duplicate match mode');
+		this.match = {rounds: config.rounds, modes};
 		this.clock = clock;
 		this.random = random;
-		this.config = validateConfig(config);
-		this.mode = requireMode(this.config.mode);
+		this.configValue = first;
 		this.lastTime = clock();
 		this.stateValue = this.initial(4);
 	}
 	get state(): GameState { return this.stateValue; }
+	get config(): Config { return this.configValue; }
+	get mode(): RuntimeMode { return requireMode(this.config.mode); }
 	private initial(count: number): GameState {
 		return {phase: 'setup', players: roster(count), ready: [], round: 1, remaining: this.config.roundMs,
 			countdown: 3, scores: emptyScores(), stimulus: null, feedback: null, pauseReason: ''};
@@ -43,22 +57,22 @@ export class Game {
 		if (this.state.phase !== 'setup') return;
 		this.stateValue = this.initial(count);
 	}
-	// Replace the setup game; configuration and mode stay fixed for its lifetime.
-	selectMode(id: string): Game {
-		if (this.state.phase !== 'setup' || this.mode.id === id) return this;
-		const game = new Game(this.clock, this.random, defaultConfigFor(id));
-		game.select(this.state.players.length);
-		return game;
+	private nextMode(): void {
+		const selection = drawMode(this.match.modes, this.remainingModes, this.random);
+		this.configValue = selection.mode;
+		this.remainingModes = selection.remaining;
 	}
 	start(): void {
 		if (this.state.phase !== 'setup') return;
+		this.nextMode();
 		this.session += 1;
 		this.resumeRound = false;
-		this.stateValue = {...this.state, phase: 'ready', ready: []};
+		this.stateValue = {...this.state, phase: 'ready', ready: [], remaining: this.config.roundMs};
 	}
 	end(): void {
 		this.session += 1;
 		this.resumeRound = false;
+		this.remainingModes = [];
 		this.stateValue = this.initial(this.state.players.length);
 	}
 	rematch(): void { const count = this.state.players.length; this.end(); this.select(count); this.start(); }
@@ -71,6 +85,7 @@ export class Game {
 			this.stateValue = {...this.state, ready};
 			if (ready.length === this.state.players.length) {
 				if (this.state.phase === 'round-results') {
+					this.nextMode();
 					this.stateValue = {...this.state, round: this.state.round + 1, remaining: this.config.roundMs,
 						scores: {...this.state.scores, round: emptyScores().round}};
 				}
@@ -94,7 +109,7 @@ export class Game {
 		const remaining = Math.max(0, this.state.remaining - Math.max(0, now - this.lastTime));
 		this.lastTime = now;
 		this.stateValue = {...this.state, remaining};
-		if (remaining === 0) this.stateValue = {...this.state, phase: this.state.round === this.config.rounds ? 'match-results' : 'round-results', ready: [], stimulus: null, feedback: null};
+		if (remaining === 0) this.stateValue = {...this.state, phase: this.state.round === this.match.rounds ? 'match-results' : 'round-results', ready: [], stimulus: null, feedback: null};
 	}
 	frame(): void {
 		const now = this.clock();
