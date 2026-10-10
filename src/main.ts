@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import './style.css';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';

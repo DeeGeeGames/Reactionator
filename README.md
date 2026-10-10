@@ -6,7 +6,7 @@ A shared-screen browser reaction game for 2–4 people around one phone or table
 
 ## Run
 
-Requires Bun 1.3.14 or later and a current browser with Pointer Events. This project uses vanilla TypeScript and Vite; no framework, ECS, or service is required.
+Requires Bun 1.3.14 or later and a current browser with Pointer Events. This project uses vanilla TypeScript bundled by Bun; no framework or ECS is required.
 
 ```sh
 bun install --frozen-lockfile
@@ -16,9 +16,9 @@ bun run test
 bun run build
 ```
 
-The development URL is printed by Vite. `dist/` is the static production output. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller input, persistence, offline installation, sound, and other modes are outside this foundation.
+The development server prints its URL and listens on all interfaces at port 3000. In the dev script, `--host` has to follow `index.html`; Bun ignores that server flag when it comes first. If port 3000 is taken, Bun prints the next free port. `dist/` is the static production output. `bun run preview` serves that output on `http://127.0.0.1:4173`. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller input, persistence, offline installation, sound, and other modes are outside this foundation.
 
-A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://david0178418.github.io/4player-reaction/`. That build sets `BASE_PATH` so asset URLs include `/4player-reaction/`. Local development, unit tests, and Playwright leave the base at `/`.
+A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://david0178418.github.io/4player-reaction/`. Built asset URLs are relative to `index.html`, so the same output works at `/` and under `/4player-reaction/`.
 
 ## Controls and flow
 
