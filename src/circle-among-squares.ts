@@ -23,11 +23,15 @@ const gap = function(time: number, id: number, config: CircleAmongSquaresConfig,
 const claim = function(time: number, id: number, config: CircleAmongSquaresConfig, random: () => number, blocked: readonly Player[]): CircleStimulus {
 	const board = boards[config.difficulty];
 	const count = board.columns * board.rows;
-	const truthful = sample(random) < 0.5;
-	const circleAt = truthful ? Math.floor(sample(random) * count) : -1;
+	const circleCell = sample(random) < 0.5 ? Math.floor(sample(random) * count) : null;
+	const circleAppearsAt = circleCell === null ? null : time + sample(random) * board.holdMs;
+	const circleRevealed = circleCell !== null && circleAppearsAt === time;
 	const cells: GlyphCell[] = [];
-	for (let index = 0; index < count; index += 1) cells.push({shape: index === circleAt ? 'circle' : 'square'});
-	return {mode: 'circle-among-squares', showing: 'claim', id, until: time + board.holdMs, blocked, columns: board.columns, rows: board.rows, cells, truthful};
+	for (let index = 0; index < count; index += 1) {
+		cells.push({shape: circleRevealed && index === circleCell ? 'circle' : 'square'});
+	}
+	return {mode: 'circle-among-squares', showing: 'claim', id, until: time + board.holdMs, blocked,
+		columns: board.columns, rows: board.rows, cells, circleCell, circleAppearsAt, circleRevealed};
 };
 const present = function(state: CircleStimulus): Presentation {
 	if (state.showing === 'gap') return {kind: 'blank', prompt: circlePrompt};
@@ -50,13 +54,20 @@ export const circleAmongSquares = defineMode({
 	},
 	create: gap,
 	advance: function(state, time, config, random) {
-		if (time < state.until) return state;
-		if (state.showing === 'claim') return gap(time, state.id + 1, config, random);
-		return claim(time, state.id + 1, config, random, state.blocked);
+		if (state.showing === 'gap') {
+			if (time < state.until) return state;
+			return claim(time, state.id + 1, config, random, state.blocked);
+		}
+		if (time >= state.until) return gap(time, state.id + 1, config, random);
+		if (state.circleCell === null || state.circleAppearsAt === null || state.circleRevealed || time < state.circleAppearsAt) return state;
+		const cells = state.cells.map(function(cell, index) {
+			return index === state.circleCell ? {shape: 'circle' as const} : cell;
+		});
+		return {...state, cells, circleRevealed: true};
 	},
 	press: function(state, {player, time}, config, random) {
 		if (state.blocked.includes(player)) return null;
-		if (state.showing === 'claim' && state.truthful) return award(state, player, gap(time, state.id + 1, config, random));
+		if (state.showing === 'claim' && state.circleRevealed) return award(state, player, gap(time, state.id + 1, config, random));
 		return {stimulus: {...state, blocked: [...state.blocked, player]}, delta: -1, player, identity: state.id};
 	},
 	present,

@@ -35,7 +35,7 @@ Explicit pause, focus/visibility loss, orientation, or substantial viewport chan
 - `src/input.ts`: pointer ownership, physical down/release tracking, gesture prevention, and teardown. Invalidation never turns a held pointer into a new press.
 - `src/main.ts` / `src/style.css`: presentation, readiness controls, browser interruptions, viewport gating, and resource cleanup.
 
-Default configuration in `src/mode.ts` uses independently equal white/red/blue/green probabilities, 250–500 ms blank gaps, and 700–1,400 ms appearances. Repeated colors are allowed. Configurations are copied and validated when a game is created. Circle among squares uses easy 3×3 boards held for 5 s. Its other draft configurations remain available in code: medium 4×4 for 3.5 s, hard 5×4 for 2.5 s, and insane 6×5 for 1.8 s. A true board hides one circle among squares of the same neutral color. The prompt is drawn upright and rotated.
+Default configuration in `src/mode.ts` uses independently equal white/red/blue/green probabilities, 250–500 ms blank gaps, and 700–1,400 ms appearances. Repeated colors are allowed. Configurations are copied and validated when a game is created. Circle among squares uses easy 3×3 boards held for 5 s. Its other draft configurations remain available in code: medium 4×4 for 3.5 s, hard 5×4 for 2.5 s, and insane 6×5 for 1.8 s. A true board starts with squares, then reveals one circle in a random cell at a random time and keeps it visible until that board ends. The prompt is drawn upright and rotated.
 
 ## Acceptance
 
