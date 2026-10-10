@@ -45,8 +45,6 @@ jobs:
         run: bun run check
 
       - name: Build project
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/
         run: bun run build
 
       - name: Setup Pages
