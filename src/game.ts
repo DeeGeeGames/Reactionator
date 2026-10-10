@@ -15,6 +15,8 @@ export interface GameState {
 export class Game {
 	readonly config: Config;
 	readonly mode: ModeDefinition;
+	private readonly clock: () => number;
+	private readonly random: () => number;
 	private stateValue: GameState;
 	private lastTime: number;
 	private countdownEnd = 0;
@@ -22,7 +24,9 @@ export class Game {
 	private session = 0;
 	private identity = 0;
 	private sequence = 0;
-	constructor(private readonly clock: () => number, private readonly random: () => number, config: Config = defaults, mode: ModeDefinition = pressOnWhite) {
+	constructor(clock: () => number, random: () => number, config: Config = defaults, mode: ModeDefinition = pressOnWhite) {
+		this.clock = clock;
+		this.random = random;
 		this.config = validateConfig(config);
 		if (mode.id !== config.mode) throw new Error('Mode does not match configuration');
 		this.mode = mode;

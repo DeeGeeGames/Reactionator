@@ -1,8 +1,11 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
+		"useDefineForClassFields": true,
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
+		"moduleDetection": "force",
+		"verbatimModuleSyntax": true,
 		"lib": [
 			"ES2022",
 			"DOM",
@@ -12,8 +15,13 @@
 			"bun"
 		],
 		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
+		"erasableSyntaxOnly": true,
+		"noUncheckedSideEffectImports": true,
 		"noEmit": true,
 		"skipLibCheck": true
 	},
