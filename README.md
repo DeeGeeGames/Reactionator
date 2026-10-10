@@ -28,12 +28,12 @@ Explicit pause, focus/visibility loss, orientation, or substantial viewport chan
 
 ## Boundaries
 
-- `src/mode.ts`: validated configuration, roster, mode contract, Press on White rules, and deduplicated score reducer. Modes produce structured outcomes and never own the DOM, device listeners, or aggregate totals.
+- `src/mode.ts`: validated configuration, roster, mode registry, Press on White rules, and deduplicated score reducer. A mode supplies create, advance, press, and a presentation value. It never owns the DOM, device listeners, or aggregate totals. Adding a mode registers another definition; the match runner does not grow a branch per game.
 - `src/game.ts`: match coordinator and active-time round runner. An injected clock and random source make timing reproducible. `frame()` commits stimulus changes; input evaluates the committed stimulus without advancing an unrendered schedule. The browser renders synchronously after input so a claimed white is cleared before another press.
 - `src/input.ts`: pointer ownership, physical down/release tracking, gesture prevention, and teardown. Invalidation never turns a held pointer into a new press.
 - `src/main.ts` / `src/style.css`: presentation, readiness controls, browser interruptions, viewport gating, and resource cleanup.
 
-Default configuration in `src/mode.ts` uses independently equal white/red/blue/green probabilities, 250–500 ms blank gaps, and 700–1,400 ms appearances. Repeated colors are allowed. Configurations are copied and validated when a game is created. A future mode can implement `ModeDefinition` and supply presentation while retaining input, lifecycle, and score reduction; no second mode is included.
+Default configuration in `src/mode.ts` uses independently equal white/red/blue/green probabilities, 250–500 ms blank gaps, and 700–1,400 ms appearances. Repeated colors are allowed. Configurations are copied and validated when a game is created. The default match stays Press on White. Circle among squares is registered beside it and is not selected unless its config is passed in. There is no mode menu yet. Its draft boards are easy 3×3 for 5 s, medium 4×4 for 3.5 s, hard 5×4 for 2.5 s, and insane 6×5 for 1.8 s. A true board hides one circle among squares of the same neutral color. The prompt is drawn upright and rotated.
 
 ## Acceptance
 

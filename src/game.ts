@@ -1,4 +1,5 @@
-import {defaults, emptyScores, pressOnWhite, reduceScore, roster, validateConfig, type Config, type ModeDefinition, type Player, type Scores, type Stimulus} from './mode';
+import {defaults, emptyScores, reduceScore, requireMode, roster, validateConfig, type Config, type Player, type RuntimeMode, type Scores, type Stimulus} from './mode';
+import {loadModes} from './modes';
 export type Phase = 'setup' | 'ready' | 'countdown' | 'playing' | 'round-results' | 'match-results' | 'paused';
 export interface GameState {
 	readonly phase: Phase;
@@ -14,7 +15,7 @@ export interface GameState {
 }
 export class Game {
 	readonly config: Config;
-	readonly mode: ModeDefinition;
+	readonly mode: RuntimeMode;
 	private readonly clock: () => number;
 	private readonly random: () => number;
 	private stateValue: GameState;
@@ -24,12 +25,12 @@ export class Game {
 	private session = 0;
 	private identity = 0;
 	private sequence = 0;
-	constructor(clock: () => number, random: () => number, config: Config = defaults, mode: ModeDefinition = pressOnWhite) {
+	constructor(clock: () => number, random: () => number, config: Config = defaults) {
+		loadModes();
 		this.clock = clock;
 		this.random = random;
 		this.config = validateConfig(config);
-		if (mode.id !== config.mode) throw new Error('Mode does not match configuration');
-		this.mode = mode;
+		this.mode = requireMode(this.config.mode);
 		this.lastTime = clock();
 		this.stateValue = this.initial(4);
 	}

@@ -1,6 +1,7 @@
 import './style.css';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
+import {type Presentation} from './mode';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
@@ -33,9 +34,12 @@ const playerChoices = [2, 3, 4].map(function(count) {
 	choices.append(choice);
 	return {count, choice};
 });
+const boardSlot = make('div', 'board-slot');
 const target = make('div', 'target');
 target.setAttribute('aria-hidden', 'true');
+boardSlot.append(target);
 const countdown = make('p', 'countdown');
+const nearPrompt = make('p', 'prompt');
 const timing = make('p', 'timing');
 const scoreTable = make('div', 'results');
 const scoreRows = ([1, 2, 3, 4] as const).map(function(player) {
@@ -55,13 +59,14 @@ const end = button('Change players', function() { game.end(); render(); });
 actions.append(start, resume, rematch, end);
 const hint = make('p', 'hint');
 const nearText = make('div', 'status-copy near-text');
-nearText.append(eyebrow, title, description, rules, choices, countdown, timing, scoreTable);
+nearText.append(eyebrow, title, description, rules, choices, countdown, nearPrompt, timing, scoreTable);
 const farText = make('div', 'status-copy far-text');
 // The far copy is visual repetition; assistive technology reads the near copy once.
 farText.setAttribute('aria-hidden', 'true');
 const farTitle = make('h1', 'title');
 const farDescription = make('p', 'description');
 const farCountdown = make('p', 'countdown');
+const farPrompt = make('p', 'prompt');
 const farTiming = make('p', 'timing');
 const farScores = make('div', 'results');
 const farScoreRows = scoreRows.map(function({player}) {
@@ -73,8 +78,8 @@ const farScoreRows = scoreRows.map(function({player}) {
 	farScores.append(row);
 	return {player, row, round, total};
 });
-farText.append(farTitle, farDescription, farCountdown, farTiming, farScores);
-center.append(farText, nearText, target, actions, hint);
+farText.append(farTitle, farDescription, farCountdown, farPrompt, farTiming, farScores);
+center.append(farText, nearText, boardSlot, actions, hint);
 const toolbar = make('div', 'toolbar');
 const pause = button('Pause', function() { interrupt('Match paused.'); });
 const fullscreen = button('Fullscreen', function() {
@@ -141,14 +146,17 @@ const render = function(): void {
 	table.dataset.inadequate = String(!adequateViewport());
 	const high = Math.max(...state.players.map(function(player) { return state.scores.total[player]; }));
 	const winners = state.players.filter(function(player) { return state.scores.total[player] === high; });
-	title.textContent = setup ? 'Press on White' : paused ? 'Paused' : ready ? 'Ready at your seat'
+	const presentation: Presentation = playing && state.stimulus !== null ? game.mode.present(state.stimulus) : {kind: 'blank', prompt: ''};
+	title.textContent = setup ? game.mode.name : paused ? 'Paused' : ready ? 'Ready at your seat'
 		: counting ? 'Get ready' : roundResults ? `Round ${state.round} complete` : matchResults
-			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : 'Press on White';
+			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
 	description.textContent = setup ? 'A shared-table reaction game. Choose your players.' : paused ? state.pauseReason
 		: ready ? 'Each player: release, then press your own control.' : roundResults ? 'Everyone press your control when ready for the next round.'
 			: matchResults ? `${game.config.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
 	show(eyebrow, setup); show(title, !playing); show(description, setup || paused || ready || results);
-	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing);
+	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing && presentation.kind !== 'blank');
+	show(nearPrompt, playing && presentation.prompt !== '');
+	show(farPrompt, playing && presentation.prompt !== '');
 	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
 	show(pause, !setup && !paused && !matchResults);
@@ -158,7 +166,11 @@ const render = function(): void {
 	for (const {count, choice} of playerChoices) choice.setAttribute('aria-pressed', String(count === state.players.length));
 	countdown.textContent = String(state.countdown);
 	timing.textContent = `ROUND ${state.round} / ${game.config.rounds} · ${(state.remaining / 1000).toFixed(1)}s`;
-	target.dataset.color = playing ? state.stimulus?.color ?? 'blank' : 'blank';
+	table.dataset.board = playing ? presentation.kind : '';
+	table.dataset.prompt = playing && presentation.prompt !== '' ? 'both' : '';
+	nearPrompt.textContent = presentation.prompt;
+	farPrompt.textContent = presentation.prompt;
+	paintBoard(playing ? presentation : {kind: 'blank', prompt: ''});
 	hint.textContent = !adequateViewport() ? 'Rotate or use a larger screen to play. Minimum 320 × 480 portrait or 560 × 320 landscape.'
 		: !settled ? 'Waiting for the layout to settle…' : !focused || document.hidden ? 'Return to this window to continue.'
 			: setup && state.players.length === 4 ? 'For four players, landscape gives everyone more room.' : '';
@@ -183,7 +195,8 @@ const render = function(): void {
 		row.round.textContent = `Round ${state.scores.round[row.player]}`;
 		row.total.textContent = `Total ${state.scores.total[row.player]}`;
 	}
-	show(farText, !setup && !playing);
+	show(farText, (!setup && !playing) || (playing && presentation.prompt !== ''));
+	show(farTitle, !playing);
 	farTitle.textContent = title.textContent;
 	farDescription.textContent = description.textContent;
 	farCountdown.textContent = countdown.textContent;
@@ -221,6 +234,35 @@ window.addEventListener('blur', onBlur);
 window.addEventListener('focus', onFocus);
 document.addEventListener('visibilitychange', onVisibility);
 let frameId = 0;
+let boardSignature = '';
+const paintBoard = function(presentation: Presentation): void {
+	const signature = presentation.kind === 'glyphs'
+		? `glyphs:${presentation.columns}:${presentation.rows}:${presentation.cells.map(function(cell) { return cell.shape; }).join(',')}`
+		: presentation.kind === 'swatch' ? `swatch:${presentation.color}` : 'blank';
+	if (signature === boardSignature) return;
+	boardSignature = signature;
+	target.replaceChildren();
+	target.style.removeProperty('--columns');
+	target.style.removeProperty('--rows');
+	if (presentation.kind === 'swatch') {
+		target.dataset.board = 'swatch';
+		target.dataset.color = presentation.color;
+		return;
+	}
+	target.dataset.color = 'blank';
+	if (presentation.kind === 'blank') {
+		target.dataset.board = 'blank';
+		return;
+	}
+	target.dataset.board = 'glyphs';
+	target.style.setProperty('--columns', String(presentation.columns));
+	target.style.setProperty('--rows', String(presentation.rows));
+	for (const cell of presentation.cells) {
+		const glyph = make('span', 'glyph');
+		glyph.dataset.shape = cell.shape;
+		target.append(glyph);
+	}
+};
 let cacheSuspended = false;
 const frame = function(): void {
 	if (disposed || cacheSuspended) return;
