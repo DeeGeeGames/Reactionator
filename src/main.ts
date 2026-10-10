@@ -2,10 +2,11 @@ import './style.css';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
 import {type Presentation} from './mode';
+import {listPlayableModes} from './modes';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
-const game = new Game(performance.now.bind(performance), Math.random);
+let game = new Game(performance.now.bind(performance), Math.random);
 const make = function<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ''): HTMLElementTagNameMap[K] {
 	const element = document.createElement(tag);
 	element.className = className;
@@ -28,7 +29,25 @@ const title = make('h1', 'title', 'Press on White');
 const description = make('p', 'description');
 const rules = make('div', 'rules');
 for (const text of game.mode.rules) rules.append(make('p', '', text));
+const modeChoices = make('div', 'choices mode-choices');
+modeChoices.setAttribute('role', 'group');
+modeChoices.setAttribute('aria-label', 'Game mode');
+const modeButtons = listPlayableModes().map(function(mode) {
+	const choice = button(mode.name, function() {
+		const selected = game.selectMode(mode.id);
+		if (selected === game) return;
+		input.dispose();
+		game = selected;
+		input = attachInput();
+		rules.replaceChildren(...game.mode.rules.map(function(text) { return make('p', '', text); }));
+		render();
+	});
+	modeChoices.append(choice);
+	return {mode, choice};
+});
 const choices = make('div', 'choices');
+choices.setAttribute('role', 'group');
+choices.setAttribute('aria-label', 'Player count');
 const playerChoices = [2, 3, 4].map(function(count) {
 	const choice = button(`${count} players`, function() { game.select(count); render(); });
 	choices.append(choice);
@@ -55,11 +74,11 @@ const actions = make('div', 'actions');
 const start = button('Start match', function() { if (layoutReady()) { game.start(); render(); } });
 const resume = button('Resume', function() { if (layoutReady()) { game.resume(); render(); } });
 const rematch = button('Rematch', function() { if (layoutReady()) { game.rematch(); render(); } });
-const end = button('Change players', function() { game.end(); render(); });
+const end = button('Change setup', function() { game.end(); render(); });
 actions.append(start, resume, rematch, end);
 const hint = make('p', 'hint');
 const nearText = make('div', 'status-copy near-text');
-nearText.append(eyebrow, title, description, rules, choices, countdown, nearPrompt, timing, scoreTable);
+nearText.append(eyebrow, title, description, modeChoices, rules, choices, countdown, nearPrompt, timing, scoreTable);
 const farText = make('div', 'status-copy far-text');
 // The far copy is visual repetition; assistive technology reads the near copy once.
 farText.setAttribute('aria-hidden', 'true');
@@ -150,20 +169,24 @@ const render = function(): void {
 	title.textContent = setup ? game.mode.name : paused ? 'Paused' : ready ? 'Ready at your seat'
 		: counting ? 'Get ready' : roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
-	description.textContent = setup ? 'A shared-table reaction game. Choose your players.' : paused ? state.pauseReason
+	description.textContent = setup ? 'Choose a mode and 2–4 players.' : paused ? state.pauseReason
 		: ready ? 'Each player: release, then press your own control.' : roundResults ? 'Everyone press your control when ready for the next round.'
 			: matchResults ? `${game.config.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
 	show(eyebrow, setup); show(title, !playing); show(description, setup || paused || ready || results);
-	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing && presentation.kind !== 'blank');
+	show(rules, setup); show(modeChoices, setup); show(choices, setup); show(countdown, counting); show(target, playing && presentation.kind !== 'blank');
 	show(nearPrompt, playing && presentation.prompt !== '');
 	show(farPrompt, playing && presentation.prompt !== '');
 	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
 	show(pause, !setup && !paused && !matchResults);
 	show(fullscreen, setup && document.fullscreenEnabled);
-	end.textContent = paused ? 'End match' : 'Change players';
+	end.textContent = paused ? 'End match' : 'Change setup';
 	start.disabled = !layoutReady(); resume.disabled = !layoutReady(); rematch.disabled = !layoutReady();
 	for (const {count, choice} of playerChoices) choice.setAttribute('aria-pressed', String(count === state.players.length));
+	for (const {mode, choice} of modeButtons) {
+		choice.setAttribute('aria-pressed', String(mode.id === game.mode.id));
+		choice.disabled = !setup;
+	}
 	countdown.textContent = String(state.countdown);
 	timing.textContent = `ROUND ${state.round} / ${game.config.rounds} · ${(state.remaining / 1000).toFixed(1)}s`;
 	table.dataset.board = playing ? presentation.kind : '';
