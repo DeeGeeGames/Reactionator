@@ -23,7 +23,7 @@ const claimOf = function(config: CircleAmongSquaresConfig, random: () => number)
 };
 const fixture = function(config: CircleAmongSquaresConfig, random: () => number) {
 	let time = 0;
-	const game = new Game(function() { return time; }, random, config);
+	const game = new Game(function() { return time; }, random, {rounds: 5, modes: [config]});
 	return {game, advance: function(ms: number, frame = true) { time += ms; if (frame) game.frame(); }};
 };
 const begin = function(game: Game, advance: (ms: number) => void) {
@@ -32,15 +32,14 @@ const begin = function(game: Game, advance: (ms: number) => void) {
 	advance(game.config.countdownMs);
 };
 describe('circle among squares', function() {
-	test('registers beside Press on White and keeps that mode the default', function() {
+	test('registers beside Press on White with typed default configurations', function() {
 		expect(loadModes()).toEqual(['press-on-white', 'circle-among-squares']);
 		expect(listModes().map(function(mode) { return mode.id; })).toEqual(['press-on-white', 'circle-among-squares']);
 		expect(() => registerMode(circleAmongSquares)).toThrow();
 		expect(() => requireMode('missing-mode')).toThrow();
 		expect(() => requireMode('press-on-white').validate(circleDefaults)).toThrow();
 		expect(() => requireMode('circle-among-squares').validate(defaults)).toThrow();
-		expect(new Game(function() { return 0; }, function() { return 0; }).mode.id).toBe('press-on-white');
-		const selected = new Game(function() { return 0; }, function() { return 0; }, circleDefaults);
+		const selected = new Game(function() { return 0; }, function() { return 0; }, {rounds: 5, modes: [circleDefaults]});
 		expect(selected.mode.id).toBe('circle-among-squares');
 		expect(selected.mode.name).toBe('Circle among squares');
 	});
@@ -48,7 +47,7 @@ describe('circle among squares', function() {
 		const config = validateConfig(circleDefaults);
 		expect(config).toEqual(circleDefaults);
 		expect(config.gap).not.toBe(circleDefaults.gap);
-		expect(() => validateConfig({...circleDefaults, rounds: 0})).toThrow();
+		expect(() => validateConfig({...circleDefaults, roundMs: 0})).toThrow();
 		expect(() => validateConfig({...circleDefaults, gap: [0, 2]})).toThrow();
 	});
 	test('builds one fixed board per difficulty, with the circle chosen up front', function() {
