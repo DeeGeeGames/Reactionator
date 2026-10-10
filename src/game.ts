@@ -1,5 +1,5 @@
 import {defaults, emptyScores, reduceScore, requireMode, roster, validateConfig, type Config, type Player, type RuntimeMode, type Scores, type Stimulus} from './mode';
-import {loadModes} from './modes';
+import {defaultConfigFor, loadModes} from './modes';
 export type Phase = 'setup' | 'ready' | 'countdown' | 'playing' | 'round-results' | 'match-results' | 'paused';
 export interface GameState {
 	readonly phase: Phase;
@@ -42,6 +42,13 @@ export class Game {
 	select(count: number): void {
 		if (this.state.phase !== 'setup') return;
 		this.stateValue = this.initial(count);
+	}
+	// Replace the setup game; configuration and mode stay fixed for its lifetime.
+	selectMode(id: string): Game {
+		if (this.state.phase !== 'setup' || this.mode.id === id) return this;
+		const game = new Game(this.clock, this.random, defaultConfigFor(id));
+		game.select(this.state.players.length);
+		return game;
 	}
 	start(): void {
 		if (this.state.phase !== 'setup') return;

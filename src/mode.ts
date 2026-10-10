@@ -60,6 +60,7 @@ export interface ModeDefinition<TConfig extends Config, TStimulus extends Stimul
 	readonly id: TConfig['mode'];
 	readonly name: string;
 	readonly rules: readonly string[];
+	readonly defaults?: TConfig;
 	readonly isConfig: (config: Config) => config is TConfig;
 	readonly isStimulus: (state: Stimulus) => state is TStimulus;
 	readonly validate: (config: TConfig) => TConfig;
@@ -72,6 +73,7 @@ export interface RuntimeMode {
 	readonly id: string;
 	readonly name: string;
 	readonly rules: readonly string[];
+	readonly defaults?: Config;
 	readonly validate: (config: Config) => Config;
 	readonly create: (time: number, identity: number, config: Config, random: () => number) => Stimulus;
 	readonly advance: (state: Stimulus, time: number, config: Config, random: () => number) => Stimulus;
@@ -81,6 +83,9 @@ export interface RuntimeMode {
 const registry = new Map<string, RuntimeMode>();
 export const registerMode = function(mode: RuntimeMode): void {
 	if (registry.has(mode.id)) throw new Error('Mode already registered');
+	if (mode.defaults !== undefined && (mode.defaults.mode !== mode.id || mode.validate(mode.defaults).mode !== mode.id)) {
+		throw new Error('Mode does not match default configuration');
+	}
 	registry.set(mode.id, mode);
 };
 export const requireMode = function(id: string): RuntimeMode {
@@ -100,6 +105,7 @@ export const defineMode = function<TConfig extends Config, TStimulus extends Sti
 	};
 	return {
 		id: mode.id, name: mode.name, rules: mode.rules,
+		...(mode.defaults === undefined ? {} : {defaults: mode.validate(configOf(mode.defaults))}),
 		validate: function(config) { return mode.validate(configOf(config)); },
 		create: function(time, identity, config, random) { return mode.create(time, identity, configOf(config), random); },
 		advance: function(state, time, config, random) { return mode.advance(stimulusOf(state), time, configOf(config), random); },
@@ -156,6 +162,7 @@ const validatePress = function(config: PressOnWhiteConfig): PressOnWhiteConfig {
 };
 export const pressOnWhite: ModeDefinition<PressOnWhiteConfig, PressOnWhiteStimulus> = {
 	id: 'press-on-white', name: 'Press on White',
+	defaults,
 	rules: ['First eligible press on white: +1.', 'Red, blue, green or blank: −1. A blank false start also locks you out of the next color.', 'After white disappears, pressing is wrong. Release before pressing again.'],
 	isConfig: isPressConfig, isStimulus: isPressStimulus, validate: validatePress,
 	create: pressGap,

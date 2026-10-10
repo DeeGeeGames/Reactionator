@@ -35,6 +35,7 @@ const present = function(state: CircleStimulus): Presentation {
 };
 export const circleAmongSquares = defineMode({
 	id: 'circle-among-squares', name: 'Circle among squares',
+	defaults: circleDefaults,
 	rules: [
 		'First eligible press when a circle is on the board: +1.',
 		'All squares, or a blank gap: −1. A blank false start also locks you out of the next board.',
