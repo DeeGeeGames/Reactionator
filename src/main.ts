@@ -2,7 +2,6 @@
 import './style.css';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
-import {type Player} from './mode';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
@@ -56,7 +55,27 @@ const rematch = button('Rematch', function() { if (layoutReady()) { game.rematch
 const end = button('Change players', function() { game.end(); render(); });
 actions.append(start, resume, rematch, end);
 const hint = make('p', 'hint');
-center.append(eyebrow, title, description, rules, choices, countdown, timing, target, scoreTable, actions, hint);
+const nearText = make('div', 'status-copy near-text');
+nearText.append(eyebrow, title, description, rules, choices, countdown, timing, scoreTable);
+const farText = make('div', 'status-copy far-text');
+// The far copy is visual repetition; assistive technology reads the near copy once.
+farText.setAttribute('aria-hidden', 'true');
+const farTitle = make('h1', 'title');
+const farDescription = make('p', 'description');
+const farCountdown = make('p', 'countdown');
+const farTiming = make('p', 'timing');
+const farScores = make('div', 'results');
+const farScoreRows = scoreRows.map(function({player}) {
+	const row = make('div', `result player-${player}`);
+	const label = make('span', '', `P${player}`);
+	const round = make('span', '');
+	const total = make('strong', '');
+	row.append(label, round, total);
+	farScores.append(row);
+	return {player, row, round, total};
+});
+farText.append(farTitle, farDescription, farCountdown, farTiming, farScores);
+center.append(farText, nearText, target, actions, hint);
 const toolbar = make('div', 'toolbar');
 const pause = button('Pause', function() { interrupt('Match paused.'); });
 const fullscreen = button('Fullscreen', function() {
@@ -65,22 +84,24 @@ const fullscreen = button('Fullscreen', function() {
 });
 fullscreen.hidden = !document.fullscreenEnabled;
 toolbar.append(pause, fullscreen);
-const symbols: Readonly<Record<Player, string>> = {1: '◆', 2: '✚', 3: '●', 4: '✦'};
 const controls = ([1, 2, 3, 4] as const).map(function(player) {
 	const element = make('button', `player-control player-${player}`);
 	element.type = 'button';
 	element.setAttribute('aria-label', `Player ${player} control`);
 	const contents = make('span', 'control-content');
-	const identity = make('span', 'identity', `${symbols[player]} P${player}`);
-	const score = make('strong', 'score', '0');
+	const identity = make('span', 'identity', `Player ${player}`);
+	const score = make('strong', `score player-${player}`, '0');
+	score.setAttribute('aria-label', `Player ${player} round score`);
+	table.append(score);
 	const status = make('span', 'control-status');
 	const feedback = make('span', 'feedback');
-	contents.append(identity, score, status, feedback);
+	contents.append(identity, status, feedback);
 	element.append(contents);
 	table.append(element);
 	return {player, element, score, status, feedback};
 });
-table.append(center, toolbar);
+center.append(toolbar);
+table.append(center);
 app.append(table);
 let disposed = false;
 let settled = true;
@@ -117,17 +138,18 @@ const render = function(): void {
 	const matchResults = state.phase === 'match-results';
 	const results = roundResults || matchResults;
 	table.dataset.phase = state.phase;
+	table.dataset.players = String(state.players.length);
 	table.dataset.inadequate = String(!adequateViewport());
 	const high = Math.max(...state.players.map(function(player) { return state.scores.total[player]; }));
 	const winners = state.players.filter(function(player) { return state.scores.total[player] === high; });
-	title.textContent = setup ? 'Press on White' : paused ? 'Paused' : ready ? 'Ready at your corner'
+	title.textContent = setup ? 'Press on White' : paused ? 'Paused' : ready ? 'Ready at your seat'
 		: counting ? 'Get ready' : roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : 'Press on White';
 	description.textContent = setup ? 'A shared-table reaction game. Choose your players.' : paused ? state.pauseReason
 		: ready ? 'Each player: release, then press your own control.' : roundResults ? 'Everyone press your control when ready for the next round.'
 			: matchResults ? `${game.config.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
 	show(eyebrow, setup); show(title, !playing); show(description, setup || paused || ready || results);
-	show(rules, setup || ready); show(choices, setup); show(countdown, counting); show(target, playing);
+	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing);
 	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
 	show(pause, !setup && !paused && !matchResults);
@@ -141,13 +163,19 @@ const render = function(): void {
 	hint.textContent = !adequateViewport() ? 'Rotate or use a larger screen to play. Minimum 320 × 480 portrait or 560 × 320 landscape.'
 		: !settled ? 'Waiting for the layout to settle…' : !focused || document.hidden ? 'Return to this window to continue.'
 			: setup && state.players.length === 4 ? 'For four players, landscape gives everyone more room.' : '';
+	show(hint, hint.textContent !== '');
 	for (const control of controls) {
 		const active = state.players.includes(control.player);
 		show(control.element, active && !setup);
 		control.element.setAttribute('aria-disabled', String(!layoutReady() || !(ready || playing || roundResults)));
+		show(control.score, active && !setup);
 		control.score.textContent = String(state.scores.round[control.player]);
+		const side = control.player === 2 || control.player === 3 ? 'far' : 'near';
+		control.element.dataset.side = side;
+		control.score.dataset.side = side;
 		control.status.textContent = ready || roundResults ? state.ready.includes(control.player) ? 'READY ✓' : 'PRESS TO READY' : `TOTAL ${state.scores.total[control.player]}`;
 		control.feedback.textContent = state.feedback?.player === control.player ? state.feedback.delta > 0 ? '+1' : '−1' : '';
+		control.element.dataset.feedback = state.feedback?.player === control.player ? state.feedback.delta > 0 ? 'positive' : 'negative' : '';
 		control.element.dataset.ready = String(state.ready.includes(control.player));
 		control.element.dataset.winner = String(matchResults && winners.includes(control.player));
 	}
@@ -155,6 +183,18 @@ const render = function(): void {
 		show(row.row, state.players.includes(row.player));
 		row.round.textContent = `Round ${state.scores.round[row.player]}`;
 		row.total.textContent = `Total ${state.scores.total[row.player]}`;
+	}
+	show(farText, !setup && !playing);
+	farTitle.textContent = title.textContent;
+	farDescription.textContent = description.textContent;
+	farCountdown.textContent = countdown.textContent;
+	farTiming.textContent = timing.textContent;
+	show(farDescription, !description.hidden);
+	show(farCountdown, counting); show(farTiming, counting); show(farScores, results);
+	for (const {player, row, round, total} of farScoreRows) {
+		show(row, state.players.includes(player));
+		round.textContent = `Round ${state.scores.round[player]}`;
+		total.textContent = `Total ${state.scores.total[player]}`;
 	}
 };
 const interrupt = function(reason: string): void { game.pause(reason); input.invalidate(); render(); };
@@ -168,11 +208,11 @@ const onResize = function(): void {
 	const next = {width: window.innerWidth, height: window.innerHeight};
 	const substantial = Math.abs(next.width - viewport.width) >= 32 || Math.abs(next.height - viewport.height) >= 48
 		|| (next.width >= next.height) !== (viewport.width >= viewport.height);
-	if (substantial || !adequateViewport() || !settled) settleLayout('Screen size changed. Ready again once everyone can reach their corner.');
+	if (substantial || !adequateViewport() || !settled) settleLayout('Screen size changed. Ready again once everyone can reach their seat.');
 	if (substantial) viewport = next;
 	render();
 };
-const onOrientation = function(): void { viewport = {width: window.innerWidth, height: window.innerHeight}; settleLayout('Screen rotated. Check your corners before resuming.'); };
+const onOrientation = function(): void { viewport = {width: window.innerWidth, height: window.innerHeight}; settleLayout('Screen rotated. Check your seats before resuming.'); };
 const onVisibility = function(): void { if (document.hidden) interrupt('The game was hidden.'); else render(); };
 const onBlur = function(): void { focused = false; interrupt('The game lost focus.'); };
 const onFocus = function(): void { focused = true; render(); };
@@ -222,7 +262,7 @@ const onPageShow = function(event: PageTransitionEvent): void {
 	input = attachInput();
 	focused = document.hasFocus();
 	viewport = {width: window.innerWidth, height: window.innerHeight};
-	settleLayout('Returned to the game. Check your corners before resuming.');
+	settleLayout('Returned to the game. Check your seats before resuming.');
 	frameId = requestAnimationFrame(frame);
 };
 window.addEventListener('pagehide', onPageHide);
