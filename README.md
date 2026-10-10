@@ -35,17 +35,6 @@ Explicit pause, focus/visibility loss, orientation, or substantial viewport chan
 
 Default configuration in `src/mode.ts` uses independently equal white/red/blue/green probabilities, 250–500 ms blank gaps, and 700–1,400 ms appearances. Repeated colors are allowed. Configurations are copied and validated when a game is created. A future mode can implement `ModeDefinition` and supply presentation while retaining input, lifecycle, and score reduction; no second mode is included.
 
-## Browser checks
-
-```sh
-bunx playwright install chromium
-bun run test:browser
-```
-
-Playwright builds and serves the production app on port 4173. Native browser journeys use the default five 20-second rounds and three-second countdowns for every roster. Controlled browser clocks cover interruption and input boundaries; lifecycle and multitouch events are dispatched synthetically. Layout checks capture setup, readiness, countdown, play, pause, round results, match results, and inadequate viewports for phone/tablet portrait and landscape sizes. Screenshots and failure traces are written to `test-output/browser/` and uploaded by CI. Typechecking includes the browser suite. To use an already installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its executable path.
-
-Actual operating-system visibility/focus changes, real back-forward-cache navigation, physical four-touch behavior, safe-area/system gesture comfort, and owner visual/pace acceptance remain device review. A merged implementation does not by itself establish these.
-
 ## Acceptance
 
-Tests establish deterministic rules and lifecycle behavior. Synthetic browser interaction establishes rendering and adapter behavior only. Physical four-touch tracking, reach, accidental OS gestures, and visibility/orientation behavior must be checked on actual phones/tablets and recorded with device/OS/browser. Visual direction, white opportunity frequency, penalties, and pace/feel require owner review. Numeric defaults remain draft values until that review. Do not treat automated checks as physical-device or creative acceptance; track remaining acceptance in GitHub issue #7.
+Tests establish deterministic rules and lifecycle behavior. Rendering, on-page pointer handling, physical four-touch tracking, reach, accidental OS gestures, visibility and orientation changes, back-forward-cache navigation, and safe-area comfort must be checked on actual phones and tablets and recorded with device, OS, and browser. Visual direction, white opportunity frequency, penalties, and pace/feel require owner review. Numeric defaults remain draft values until that review. Do not treat automated checks as physical-device or creative acceptance; track remaining acceptance in GitHub issue #7.

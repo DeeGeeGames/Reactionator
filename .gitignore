@@ -1,6 +1,3 @@
 node_modules/
 dist/
 artifacts/
-playwright-report/
-test-results/
-test-output/
