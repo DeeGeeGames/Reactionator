@@ -17,7 +17,7 @@ describe('configuration and score boundary', function() {
 			expect(() => validateConfig(config)).toThrow();
 		}
 		expect(() => roster(1)).toThrow();
-		expect(roster(2)).toEqual([1, 3]); expect(roster(3)).toEqual([1, 2, 3]);
+		expect(roster(2)).toEqual([1, 2]); expect(roster(3)).toEqual([1, 2, 3]);
 	});
 	test('negative totals, event deduplication, and inactive player rejection', function() {
 		const event = {id: 'a', player: 1, delta: -1} as const;

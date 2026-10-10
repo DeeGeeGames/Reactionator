@@ -31,7 +31,7 @@ export const createPointerTracker = function (onPress: (player: PlayerId) => voi
 	};
 };
 
-/** Reports one press on initial down; movement never changes corner ownership. */
+/** Reports one press on initial down; movement never changes seat ownership. */
 export const attachPlayerInput = function (
 	controls: readonly PlayerControl[],
 	onPress: (player: PlayerId) => void,

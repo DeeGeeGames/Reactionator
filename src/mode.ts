@@ -26,7 +26,7 @@ export const validateConfig = function(config: Config): Config {
 	return {...config, gap: [...config.gap], appearance: [...config.appearance], probabilities: [...config.probabilities]};
 };
 export const roster = function(count: number): readonly Player[] {
-	if (count === 2) return [1, 3];
+	if (count === 2) return [1, 2];
 	if (count === 3) return [1, 2, 3];
 	if (count === 4) return [1, 2, 3, 4];
 	throw new Error('Choose 2, 3, or 4 players');
