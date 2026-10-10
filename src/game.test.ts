@@ -1,7 +1,11 @@
 import {describe, expect, test} from 'bun:test';
 import {Game} from './game';
-import {defaults, emptyScores, pressOnWhite, reduceScore, roster, validateConfig, type Config} from './mode';
-const fixture = function(overrides: Partial<Config> = {}, random: () => number = () => 0) {
+import {defaults, emptyScores, pressOnWhite, reduceScore, roster, validateConfig, type Color, type PressOnWhiteConfig, type Stimulus} from './mode';
+const shownColor = function(stimulus: Stimulus | null): Color | null {
+	if (stimulus === null || stimulus.mode !== 'press-on-white') throw new Error('Expected Press on White');
+	return stimulus.color;
+};
+const fixture = function(overrides: Partial<Omit<PressOnWhiteConfig, 'mode'>> = {}, random: () => number = () => 0) {
 	let time = 0;
 	const game = new Game(() => time, random, {...defaults, ...overrides});
 	return {game, advance: function(ms: number, frame = true) { time += ms; if (frame) game.frame(); }};
@@ -32,10 +36,10 @@ describe('committed mode and timing fairness', function() {
 	test('unrendered scheduled white remains blank and false start carries into white', function() {
 		const {game, advance} = fixture(); begin(game, advance);
 		advance(300, false); game.press(1); game.press(1);
-		expect(game.state.stimulus?.color).toBe(null); expect(game.state.scores.total[1]).toBe(-1);
-		game.frame(); expect(game.state.stimulus?.color).toBe('white');
+		expect(shownColor(game.state.stimulus)).toBe(null); expect(game.state.scores.total[1]).toBe(-1);
+		game.frame(); expect(shownColor(game.state.stimulus)).toBe('white');
 		game.press(1); expect(game.state.scores.total[1]).toBe(-1);
-		game.press(3); expect(game.state.scores.total[3]).toBe(1); expect(game.state.stimulus?.color).toBe(null);
+		game.press(3); expect(game.state.scores.total[3]).toBe(1); expect(shownColor(game.state.stimulus)).toBe(null);
 	});
 	test('equal timestamps follow arrival order; claimed white clears before later press', function() {
 		const {game, advance} = fixture(); begin(game, advance); advance(250);
@@ -46,7 +50,7 @@ describe('committed mode and timing fairness', function() {
 	});
 	test('nonwhite penalties are bounded, renewed at next appearance', function() {
 		const {game, advance} = fixture({}, () => 0.5); begin(game, advance); advance(375);
-		expect(game.state.stimulus?.color).toBe('blue'); game.press(2); game.press(2);
+		expect(shownColor(game.state.stimulus)).toBe('blue'); game.press(2); game.press(2);
 		expect(game.state.scores.total[2]).toBe(-1); advance(1050); advance(375); game.press(2);
 		expect(game.state.scores.total[2]).toBe(-2);
 	});
@@ -55,7 +59,7 @@ describe('committed mode and timing fairness', function() {
 		for (const p of game.state.players) game.press(p);
 		advance(250); for (const p of game.state.players) game.press(p);
 		expect(Object.values(game.state.scores.total)).toEqual([-1, -1, -1, -1]);
-		advance(700); expect(game.state.stimulus?.color).toBe(null); advance(250); advance(700);
+		advance(700); expect(shownColor(game.state.stimulus)).toBe(null); advance(250); advance(700);
 		expect(Object.values(game.state.scores.total)).toEqual([-1, -1, -1, -1]);
 	});
 	test('at deadline input is rejected even before the next frame', function() {
@@ -88,7 +92,7 @@ describe('match lifecycle', function() {
 		game.pause('hidden'); const remaining = game.state.remaining;
 		game.press(2); advance(60_000); game.pause('again'); expect(game.state.remaining).toBe(remaining);
 		game.resume(); for (const p of game.state.players) game.press(p); advance(3000);
-		expect(game.state.phase).toBe('playing'); expect(game.state.stimulus?.color).toBe(null);
+		expect(game.state.phase).toBe('playing'); expect(shownColor(game.state.stimulus)).toBe(null);
 		expect(game.state.remaining).toBe(remaining); expect(game.state.scores.total[1]).toBe(1);
 		advance(100); game.pause('again'); expect(game.state.remaining).toBe(remaining - 100);
 	});
