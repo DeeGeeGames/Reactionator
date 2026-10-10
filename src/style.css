@@ -122,13 +122,14 @@ button:disabled { cursor: default; }
 	.table:not([data-phase='setup']) .countdown { font-size: 42px; }
 	.target { width: 64px; height: 64px; }
 	.table[data-phase='setup'] .center { max-width: 500px; }
-	.table[data-phase='setup'] .title { font-size: 24px; }
-	.table[data-phase='setup'] .eyebrow { margin-bottom: 8px; }
+	.table[data-phase='setup'] .title { font-size: 24px; margin-bottom: 6px; }
+	.table[data-phase='setup'] .eyebrow { margin-bottom: 4px; }
 	.table[data-phase='setup'] .rules { margin: 6px auto; font-size: 10px; }
+	.table[data-phase='setup'] .rules p { margin: 4px 0; }
 	.table[data-phase='setup'] .description { margin: 4px 0; }
-	.table[data-phase='setup'] .actions { margin-top: 8px; }
-	.table[data-phase='setup'] .toolbar { margin-top: 4px; }
-	.table[data-phase='setup'] .hint { margin-top: 8px; }
+	.table[data-phase='setup'] .actions { margin-top: 4px; }
+	.table[data-phase='setup'] .toolbar { margin-top: 0; }
+	.table[data-phase='setup'] .hint { margin-top: 4px; }
 }
 @media (max-height: 560px) and (orientation: portrait) {
 	:root { --pad-height: 104px; }

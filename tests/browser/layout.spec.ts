@@ -67,6 +67,7 @@ const sizes = [
 	{name: 'safe-area-portrait', width: 320, height: 600, insets: {top: 90, right: 0, bottom: 54, left: 0}},
 	{name: 'safe-area-landscape', width: 620, height: 344, insets: {top: 24, right: 42, bottom: 24, left: 42}},
 	{name: 'minimum-landscape', width: 560, height: 320},
+	{name: 'fallback-font-landscape', width: 560, height: 320, font: 'Arial, sans-serif'},
 	{name: 'phone-portrait', width: 390, height: 844},
 	{name: 'phone-landscape', width: 844, height: 390},
 	{name: 'tablet-portrait', width: 768, height: 1024},
@@ -78,6 +79,7 @@ for (const count of [2, 3, 4]) {
 			await page.setViewportSize(size);
 			await page.clock.install();
 			await page.goto('/');
+			if ('font' in size) await page.addStyleTag({content: `:root { font-family: ${size.font}; }`});
 			if ('insets' in size) {
 				await page.addStyleTag({content: `:root { --safe-top: ${size.insets.top}px; --safe-right: ${size.insets.right}px; --safe-bottom: ${size.insets.bottom}px; --safe-left: ${size.insets.left}px; }`});
 			}
