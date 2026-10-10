@@ -91,6 +91,10 @@ button:disabled { cursor: default; }
 }
 @media (max-height: 560px) and (orientation: portrait) {
 	:root { --corner-height: 104px; }
+	.player-control { padding: 8px; }
+	.control-content { gap: 2px; }
+	.identity { line-height: 20px; }
+	.control-status { line-height: 12px; }
 	.title { font-size: 21px; }
 	.rules { font-size: 10px; line-height: 1.25; margin: 8px auto; }
 	.description { font-size: 11px; margin: 5px 0; }
