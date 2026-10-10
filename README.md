@@ -18,6 +18,8 @@ bun run build
 
 The development URL is printed by Vite. `dist/` is the static production output. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller input, persistence, offline installation, sound, and other modes are outside this foundation.
 
+A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://david0178418.github.io/4player-reaction/`. That build sets `BASE_PATH` so asset URLs include `/4player-reaction/`. Local development, unit tests, and Playwright leave the base at `/`.
+
 ## Controls and flow
 
 Corners stay fixed: P1 top left, P2 top right, P3 bottom right, P4 bottom left. Two players use P1/P3; three add P2. Upper labels face the top edge. The viewport gate requires at least 320 × 480 portrait or 560 × 320 landscape after additional device safe-area insets; DOM bounds at these minimums keep the ready screen between the controls. Physical comfort still needs device review. Each player presses their own corner to ready, then watches the central stimulus after 3/2/1. Release before pressing again. Holding never repeats and extra fingers cannot farm points. Everyone readies between rounds. Rematch keeps the roster and clears scores; Change players returns to setup.
