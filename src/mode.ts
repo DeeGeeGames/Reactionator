@@ -40,7 +40,9 @@ export interface CircleClaimStimulus extends StimulusCore {
 	readonly columns: number;
 	readonly rows: number;
 	readonly cells: readonly GlyphCell[];
-	readonly truthful: boolean;
+	readonly circleCell: number | null;
+	readonly circleAppearsAt: number | null;
+	readonly circleRevealed: boolean;
 }
 export type CircleStimulus = CircleGapStimulus | CircleClaimStimulus;
 export type Stimulus = PressOnWhiteStimulus | CircleStimulus;
