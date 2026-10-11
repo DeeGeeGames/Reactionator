@@ -3,7 +3,13 @@ export type Color = 'white' | 'red' | 'blue' | 'green';
 export const difficulties = ['easy', 'medium', 'hard', 'insane'] as const;
 export type Difficulty = typeof difficulties[number];
 export type GlyphShape = 'square' | 'circle';
-export interface GlyphCell { readonly shape: GlyphShape }
+export type GlyphColor = 'coral' | 'gold' | 'teal' | 'blue' | 'violet';
+export type GlyphDetail = 'solid' | 'stripes' | 'dots';
+export interface GlyphCell {
+	readonly shape: GlyphShape;
+	readonly color: GlyphColor;
+	readonly detail: GlyphDetail;
+}
 export interface SharedConfig {
 	readonly mode: string;
 	readonly roundMs: number;
@@ -39,6 +45,8 @@ export interface CircleClaimStimulus extends StimulusCore {
 	readonly showing: 'claim';
 	readonly columns: number;
 	readonly rows: number;
+	readonly activityStartedAt: number;
+	readonly activityPhase: number;
 	readonly cells: readonly GlyphCell[];
 	readonly circleCell: number | null;
 	readonly circleAppearsAt: number | null;

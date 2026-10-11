@@ -240,7 +240,7 @@ let frameId = 0;
 let boardSignature = '';
 const paintBoard = function(presentation: Presentation): void {
 	const signature = presentation.kind === 'glyphs'
-		? `glyphs:${presentation.columns}:${presentation.rows}:${presentation.cells.map(function(cell) { return cell.shape; }).join(',')}`
+		? `glyphs:${presentation.columns}:${presentation.rows}:${presentation.cells.map(function(cell) { return `${cell.shape}/${cell.color}/${cell.detail}`; }).join(',')}`
 		: presentation.kind === 'swatch' ? `swatch:${presentation.color}` : 'blank';
 	if (signature === boardSignature) return;
 	boardSignature = signature;
@@ -263,6 +263,8 @@ const paintBoard = function(presentation: Presentation): void {
 	for (const cell of presentation.cells) {
 		const glyph = make('span', 'glyph');
 		glyph.dataset.shape = cell.shape;
+		glyph.dataset.color = cell.color;
+		glyph.dataset.detail = cell.detail;
 		target.append(glyph);
 	}
 };

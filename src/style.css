@@ -169,7 +169,15 @@ button:disabled { cursor: default; }
 	display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
 	gap: 4px; background: transparent; border-radius: 0;
 }
-.glyph { background: #d7dbe6; min-width: 0; min-height: 0; }
+.glyph { min-width: 0; min-height: 0; background-color: var(--glyph-color); }
+.glyph[data-color='coral'] { --glyph-color: #ff7a72; }
+.glyph[data-color='gold'] { --glyph-color: #ffc857; }
+.glyph[data-color='teal'] { --glyph-color: #43c8b8; }
+.glyph[data-color='blue'] { --glyph-color: #69a9ff; }
+.glyph[data-color='violet'] { --glyph-color: #b896ff; }
+.glyph[data-detail='solid'] { background-image: none; }
+.glyph[data-detail='stripes'] { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgb(17 21 28 / 24%) 6px 9px); }
+.glyph[data-detail='dots'] { background-image: radial-gradient(rgb(17 21 28 / 26%) 1px, transparent 1.5px); background-size: 8px 8px; }
 .glyph[data-shape='square'] { border-radius: 2px; }
 .glyph[data-shape='circle'] { border-radius: 50%; }
 @media (orientation: landscape) {
