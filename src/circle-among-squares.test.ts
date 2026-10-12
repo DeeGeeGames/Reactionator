@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'bun:test';
 import {Game} from './game';
-import {CIRCLE_ACTIVITY_INTERVAL_MS, circleAmongSquares, circleDefaults, circlePrompt} from './circle-among-squares';
-import {defaults, listModes, registerMode, requireMode, validateConfig, type CircleAmongSquaresConfig, type CircleStimulus, type Difficulty, type Stimulus} from './mode';
+import {circleAmongSquares, circleDefaults, circlePrompt} from './circle-among-squares';
+import {defaults, listModes, registerMode, requireMode, validateConfig, type CircleAmongSquaresConfig, type CircleStimulus, type Stimulus} from './mode';
 import {loadModes} from './modes';
 
 const sequence = function(values: readonly number[]): () => number {
@@ -22,8 +22,8 @@ const claimOf = function(config: CircleAmongSquaresConfig, random: () => number)
 	return asCircle(circleAmongSquares.advance(opened, opened.until, config, random));
 };
 const reveal = function(board: CircleStimulus, config: CircleAmongSquaresConfig): CircleStimulus {
-	if (board.showing !== 'claim' || board.circleAppearsAt === null) throw new Error('Expected a scheduled circle');
-	return asCircle(circleAmongSquares.advance(board, board.circleAppearsAt, config, function() { return 0; }));
+	if (board.showing !== 'claim') throw new Error('Expected a scheduled circle');
+	return asCircle(circleAmongSquares.advance(board, board.until, config, sequence([0.99, 0.5])));
 };
 const fixture = function(config: CircleAmongSquaresConfig, random: () => number) {
 	let time = 0;
@@ -54,134 +54,90 @@ describe('circle among squares', function() {
 		expect(() => validateConfig({...circleDefaults, roundMs: 0})).toThrow();
 		expect(() => validateConfig({...circleDefaults, gap: [0, 2]})).toThrow();
 	});
-	test('shows squares first, then reveals one circle in a random cell and keeps it visible', function() {
-		const specs = [
-			['easy', 3, 3, 5_000],
-			['medium', 4, 4, 3_500],
-			['hard', 5, 4, 2_500],
-			['insane', 6, 5, 1_800],
-		] as const;
-		for (const [difficulty, columns, rows, hold] of specs) {
-			const config = validateConfig({...circleDefaults, difficulty});
-			if (config.mode !== 'circle-among-squares') throw new Error('Expected circle config');
-			const board = claimOf(config, sequence([0, 0.99, 0.5]));
-			if (board.showing !== 'claim') throw new Error('Expected a claim');
-			expect(board.circleCell).toBe(columns * rows - 1);
-			expect(board.circleRevealed).toBe(false);
-			expect(board.circleAppearsAt).toBe(250 + hold / 2);
+	test('keeps every difficulty board fixed while circles repeatedly appear and expire', function() {
+		const specs = [['easy', 3, 3, 5_000], ['medium', 4, 4, 3_500], ['hard', 5, 4, 2_500], ['insane', 6, 5, 1_800]] as const;
+		for (const [difficulty, columns, rows, wait] of specs) {
+			const config = {...circleDefaults, difficulty};
+			const board = claimOf(config, sequence([0, 0.5]));
+			if (board.showing !== 'claim') throw new Error('Expected a board');
 			expect(board.columns).toBe(columns);
 			expect(board.rows).toBe(rows);
-			expect(board.cells).toHaveLength(columns * rows);
-			expect(board.until).toBe(250 + hold);
+			expect(board.until).toBe(250 + 250 + (wait - 250) / 2);
 			expect(board.cells.every(function(cell) { return cell.shape === 'square'; })).toBe(true);
-			expect(circleAmongSquares.present(board)).toEqual({kind: 'glyphs', prompt: circlePrompt, columns, rows, cells: board.cells});
+			const noRandom = function(): number { throw new Error('No transition expected'); };
+			expect(circleAmongSquares.advance(board, board.until - 1, config, noRandom)).toBe(board);
 			const shown = reveal(board, config);
-			if (shown.showing !== 'claim') throw new Error('Expected the revealed claim');
-			expect(shown.circleRevealed).toBe(true);
+			if (shown.showing !== 'claim') throw new Error('Expected a circle');
+			expect(shown.circleCell).toBe(columns * rows - 1);
+			expect(shown.until - board.until).toBe(1_000);
 			expect(shown.cells.filter(function(cell) { return cell.shape === 'circle'; })).toHaveLength(1);
-			expect(shown.cells[columns * rows - 1]?.shape).toBe('circle');
-			expect(circleAmongSquares.present(shown)).toEqual({kind: 'glyphs', prompt: circlePrompt, columns, rows, cells: shown.cells});
-			const held = asCircle(circleAmongSquares.advance(shown, shown.until - 1, config, function() { throw new Error('An active board should not draw randomness'); }));
-			if (held.showing !== 'claim') throw new Error('Expected the board to remain active');
-			expect(held.circleRevealed).toBe(true);
-			expect(held.cells.filter(function(cell) { return cell.shape === 'circle'; })).toHaveLength(1);
+			expect(circleAmongSquares.advance(shown, shown.until - 1, config, noRandom)).toBe(shown);
+			const hidden = asCircle(circleAmongSquares.advance(shown, shown.until, config, sequence([0])));
+			if (hidden.showing !== 'claim') throw new Error('Expected the same board');
+			expect(hidden.circleRevealed).toBe(false);
+			expect(hidden.cells).toEqual(board.cells);
+			expect(hidden.until).toBe(shown.until + 250);
+			const returned = asCircle(circleAmongSquares.advance(hidden, hidden.until, config, sequence([0, 0])));
+			if (returned.showing !== 'claim') throw new Error('Expected another circle');
+			expect(returned.cells[0]?.shape).toBe('circle');
+			expect(returned.until - hidden.until).toBe(500);
+			for (const [index, cell] of returned.cells.entries()) {
+				const original = board.cells[index];
+				const previous = hidden.cells[index];
+				if (original === undefined || previous === undefined) throw new Error('Missing cell');
+				expect(cell.color).toBe(original.color);
+				expect(cell.detail).toBe(original.detail);
+				if (index !== 0) expect(cell).toBe(previous);
+			}
+			expect(circleAmongSquares.present(returned)).toEqual({kind: 'glyphs', prompt: circlePrompt, columns, rows, cells: returned.cells});
 		}
-		const hidden = claimOf(circleDefaults, sequence([0.5]));
-		if (hidden.showing !== 'claim') throw new Error('Expected a false claim');
-		expect(hidden.circleCell).toBeNull();
-		expect(hidden.circleAppearsAt).toBeNull();
-		expect(hidden.cells.every(function(cell) { return cell.shape === 'square'; })).toBe(true);
-		expect(circleAmongSquares.present(asCircle(circleAmongSquares.create(0, 1, circleDefaults, sequence([0]))))).toEqual({kind: 'blank', prompt: circlePrompt});
-		const almost = claimOf({...circleDefaults, difficulty: 'medium' satisfies Difficulty}, sequence([0.499, 0, 0.5]));
-		if (almost.showing !== 'claim') throw new Error('Expected a true claim');
-		expect(almost.circleCell).toBe(0);
-		expect(almost.cells[0]?.shape).toBe('square');
-		const almostShown = reveal(almost, {...circleDefaults, difficulty: 'medium'});
-		if (almostShown.showing !== 'claim') throw new Error('Expected the revealed claim');
-		expect(almostShown.cells[0]?.shape).toBe('circle');
 	});
-	test('changes colors and tile details on clock phases without leaking the hidden target', function() {
-		const trueBoard = claimOf(circleDefaults, sequence([0, 0.99, 0.61]));
-		const falseBoard = claimOf(circleDefaults, sequence([0.5]));
-		if (trueBoard.showing !== 'claim' || falseBoard.showing !== 'claim') throw new Error('Expected active boards');
-		const visualCells = function(board: CircleStimulus) {
-			if (board.showing !== 'claim') throw new Error('Expected an active board');
-			return board.cells.map(function(cell) { return {color: cell.color, detail: cell.detail}; });
-		};
-		const firstColors = trueBoard.cells.map(function(cell) { return cell.color; });
-		const firstDetails = trueBoard.cells.map(function(cell) { return cell.detail; });
-		expect(visualCells(trueBoard)).toEqual(visualCells(falseBoard));
-		expect(trueBoard.cells.every(function(cell) { return cell.shape === 'square'; })).toBe(true);
-
-		const changedTime = trueBoard.activityStartedAt + CIRCLE_ACTIVITY_INTERVAL_MS;
-		const changedTrue = asCircle(circleAmongSquares.advance(trueBoard, changedTime, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		const changedFalse = asCircle(circleAmongSquares.advance(falseBoard, changedTime, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		if (changedTrue.showing !== 'claim' || changedFalse.showing !== 'claim') throw new Error('Expected active boards');
-		expect(changedTrue.activityPhase).toBe(1);
-		expect(changedTrue.cells.map(function(cell) { return cell.color; })).not.toEqual(firstColors);
-		expect(changedTrue.cells.map(function(cell) { return cell.detail; })).not.toEqual(firstDetails);
-		expect(visualCells(changedTrue)).toEqual(visualCells(changedFalse));
-		expect(changedFalse.cells.every(function(cell) { return cell.shape === 'square'; })).toBe(true);
-
-		if (trueBoard.circleCell === null || trueBoard.circleAppearsAt === null) throw new Error('Expected a scheduled circle');
-		const beforeReveal = asCircle(circleAmongSquares.advance(trueBoard, trueBoard.circleAppearsAt - 1, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		const revealed = asCircle(circleAmongSquares.advance(beforeReveal, trueBoard.circleAppearsAt, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		if (beforeReveal.showing !== 'claim' || revealed.showing !== 'claim') throw new Error('Expected active boards');
-		const targetBefore = beforeReveal.cells[trueBoard.circleCell];
-		const targetAfter = revealed.cells[trueBoard.circleCell];
-		expect(targetBefore?.shape).toBe('square');
-		expect(targetAfter?.shape).toBe('circle');
-		expect(targetAfter?.color).toBe(targetBefore?.color);
-		expect(targetAfter?.detail).toBe(targetBefore?.detail);
-
-		const afterReveal = asCircle(circleAmongSquares.advance(revealed, revealed.activityStartedAt + (revealed.activityPhase + 1) * CIRCLE_ACTIVITY_INTERVAL_MS, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		if (afterReveal.showing !== 'claim') throw new Error('Expected the revealed board to remain active');
-		expect(afterReveal.circleRevealed).toBe(true);
-		expect(afterReveal.cells.filter(function(cell) { return cell.shape === 'circle'; })).toHaveLength(1);
-		expect(afterReveal.cells[trueBoard.circleCell]?.color).not.toBe(targetAfter?.color);
-		const activeFalse = asCircle(circleAmongSquares.advance(falseBoard, falseBoard.until - 1, circleDefaults, function() { throw new Error('An active board should not draw randomness'); }));
-		if (activeFalse.showing !== 'claim') throw new Error('Expected an active false board');
-		expect(activeFalse.cells.every(function(cell) { return cell.shape === 'square'; })).toBe(true);
+	test('samples visibility near the upper bound and gives a full window after a late frame', function() {
+		const board = claimOf(circleDefaults, sequence([0, 0]));
+		const shown = asCircle(circleAmongSquares.advance(board, board.until + 10_000, circleDefaults, sequence([0, 0.999])));
+		expect(shown.until).toBe(board.until + 10_000 + 1_499);
 	});
-	test('scores a true board once, keeps a false board up, and lets the next player answer', function() {
-		const {game, advance} = fixture(circleDefaults, sequence([0, 0, 0, 0.5, 0.5, 0]));
+	test('scores once, penalizes wrong presses once per opportunity, and unlocks the next opportunity', function() {
+		const {game, advance} = fixture(circleDefaults, function() { return 0; });
 		begin(game, advance);
 		advance(250);
-		const hiddenCircle = asCircle(game.state.stimulus);
-		if (hiddenCircle.showing !== 'claim') throw new Error('Expected a true claim');
-		expect(hiddenCircle.circleRevealed).toBe(false);
+		const hidden = asCircle(game.state.stimulus);
+		game.press(1); game.press(1);
+		expect(game.state.scores.total[1]).toBe(-1);
+		expect(asCircle(game.state.stimulus).id).toBe(hidden.id);
+		advance(250);
 		game.press(1);
 		expect(game.state.scores.total[1]).toBe(-1);
-		advance(2_500);
-		const trueBoard = asCircle(game.state.stimulus);
-		if (trueBoard.showing !== 'claim') throw new Error('Expected the revealed true claim');
-		expect(trueBoard.circleRevealed).toBe(true);
-		game.press(1);
-		game.press(2);
-		expect(game.state.scores.total[2]).toBe(1);
+		advance(500);
+		const expired = asCircle(game.state.stimulus);
+		if (expired.showing !== 'claim') throw new Error('Expected the board to persist');
+		expect(expired.cells).toEqual(hidden.showing === 'claim' ? hidden.cells : []);
+		advance(250);
+		game.press(1); game.press(2);
+		expect(game.state.scores.total[1]).toBe(0);
+		expect(game.state.scores.total[2]).toBe(-1);
 		expect(asCircle(game.state.stimulus).showing).toBe('gap');
-		const missed = fixture(circleDefaults, sequence([0, 0.5, 0]));
-		begin(missed.game, missed.advance);
-		missed.advance(250);
-		const falseBoard = asCircle(missed.game.state.stimulus);
-		missed.game.press(1); missed.game.press(1);
-		expect(missed.game.state.scores.total[1]).toBe(-1);
-		expect(asCircle(missed.game.state.stimulus).id).toBe(falseBoard.id);
-		missed.game.press(2);
-		expect(missed.game.state.scores.total[2]).toBe(-1);
-		expect(missed.game.state.scores.total[1]).toBe(-1);
-		missed.advance(5_000);
-		expect(missed.game.state.scores.total).toEqual({1: -1, 2: -1, 3: 0, 4: 0});
-		expect(asCircle(missed.game.state.stimulus).showing).toBe('gap');
+	});
+	test('presses use the committed circle until a frame hides it and miss after disappearance', function() {
+		const {game, advance} = fixture(circleDefaults, function() { return 0; });
+		begin(game, advance); advance(250); advance(250);
+		advance(500);
+		game.press(2);
+		expect(game.state.scores.total[2]).toBe(-1);
+		advance(250);
+		advance(500, false);
+		game.press(1);
+		expect(game.state.scores.total[1]).toBe(1);
 	});
 	test('a gap false start locks that player out while another player can still score', function() {
-		const {game, advance} = fixture(circleDefaults, sequence([0, 0, 0, 0, 0]));
+		const {game, advance} = fixture(circleDefaults, function() { return 0; });
 		begin(game, advance);
 		advance(100, false);
 		game.press(1);
 		expect(game.state.scores.total[1]).toBe(-1);
 		expect(asCircle(game.state.stimulus).showing).toBe('gap');
 		advance(150);
+		advance(250);
 		const board = asCircle(game.state.stimulus);
 		if (board.showing !== 'claim') throw new Error('Expected the next board');
 		expect(board.circleRevealed).toBe(true);
@@ -202,8 +158,9 @@ describe('circle among squares', function() {
 		expect(game.state.scores.total[1]).toBe(0);
 	});
 	test('pause resumes into a fresh gap and keeps the score', function() {
-		const {game, advance} = fixture(circleDefaults, sequence([0, 0, 0, 0, 0, 0]));
+		const {game, advance} = fixture(circleDefaults, function() { return 0; });
 		begin(game, advance);
+		advance(250);
 		advance(250);
 		game.press(4);
 		const remaining = game.state.remaining;

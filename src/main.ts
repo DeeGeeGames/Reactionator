@@ -244,6 +244,19 @@ const paintBoard = function(presentation: Presentation): void {
 		: presentation.kind === 'swatch' ? `swatch:${presentation.color}` : 'blank';
 	if (signature === boardSignature) return;
 	boardSignature = signature;
+	if (presentation.kind === 'glyphs' && target.dataset.board === 'glyphs'
+		&& target.style.getPropertyValue('--columns') === String(presentation.columns)
+		&& target.style.getPropertyValue('--rows') === String(presentation.rows)
+		&& target.children.length === presentation.cells.length) {
+		for (const [index, cell] of presentation.cells.entries()) {
+			const glyph = target.children[index];
+			if (!(glyph instanceof HTMLElement)) throw new Error('Missing board glyph');
+			if (glyph.dataset.shape !== cell.shape) glyph.dataset.shape = cell.shape;
+			if (glyph.dataset.color !== cell.color) glyph.dataset.color = cell.color;
+			if (glyph.dataset.detail !== cell.detail) glyph.dataset.detail = cell.detail;
+		}
+		return;
+	}
 	target.replaceChildren();
 	target.style.removeProperty('--columns');
 	target.style.removeProperty('--rows');

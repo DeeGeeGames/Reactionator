@@ -93,7 +93,9 @@ describe('mixed matches', function() {
 					advance(game.config.countdownMs);
 					expect(game.state.stimulus?.mode).toBe(game.config.mode);
 					expect(game.state.stimulus?.blocked).toEqual([]);
-					advance(250); game.press(1);
+					advance(250);
+					if (game.config.mode === 'circle-among-squares') advance(250);
+					game.press(1);
 					expect(game.state.scores.total[1]).toBe(round);
 					advance(game.config.roundMs);
 					expect(game.state.phase).toBe(round === rounds ? 'match-results' : 'round-results');
@@ -147,7 +149,9 @@ describe('mixed matches', function() {
 			const {game, advance} = fixture(3);
 			game.select(count); game.start();
 			for (let round = 1; round <= 3; round += 1) {
-				ready(game); advance(game.config.countdownMs); advance(250); game.press(1); advance(game.config.roundMs);
+				ready(game); advance(game.config.countdownMs); advance(250);
+				if (game.config.mode === 'circle-among-squares') advance(250);
+				game.press(1); advance(game.config.roundMs);
 			}
 			expect(game.state.phase).toBe('match-results');
 			const match = game.match;

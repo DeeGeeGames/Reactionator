@@ -45,11 +45,8 @@ export interface CircleClaimStimulus extends StimulusCore {
 	readonly showing: 'claim';
 	readonly columns: number;
 	readonly rows: number;
-	readonly activityStartedAt: number;
-	readonly activityPhase: number;
 	readonly cells: readonly GlyphCell[];
 	readonly circleCell: number | null;
-	readonly circleAppearsAt: number | null;
 	readonly circleRevealed: boolean;
 }
 export type CircleStimulus = CircleGapStimulus | CircleClaimStimulus;
