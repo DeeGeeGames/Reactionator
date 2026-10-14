@@ -26,44 +26,47 @@ const testedModes = [threeOfAKind, fiveDifferent, matchingPair, colorWord, trueE
 describe('shared static challenge lifecycle', function() {
 	for (const mode of testedModes) {
 		for (const difficulty of difficulties) {
-			test(`${mode.id} ${difficulty}: committed gap blocks once, eligible true claim scores and clears`, function() {
+			test(`${mode.id} ${difficulty}: starts on a puzzle and immediately advances after a correct claim`, function() {
 				const config = {...staticDefaults(staticModeId(mode)), difficulty};
-				const gap = mode.create(0, 1, config, () => 0);
-				const miss = mode.press(gap, {player: 1, time: 250}, config, () => 0);
-				if (miss === null) throw new Error('Missing penalty');
-				expect(miss.delta).toBe(-1);
-				expect(mode.press(miss.stimulus, {player: 1, time: 250}, config, () => 0)).toBeNull();
-				const claim = staticState(mode.advance(miss.stimulus, 250, config, () => 0));
-				expect(claim.until).toBe(250 + claimHoldMs[difficulty]);
-				expect(mode.press(claim, {player: 1, time: 251}, config, () => 0)).toBeNull();
-				const award = mode.press(claim, {player: 2, time: 251}, config, () => 0);
+				const first = staticState(mode.create(0, 1, config, () => 0));
+				expect(first.showing).toBe('claim');
+				expect(mode.present(first).kind).not.toBe('blank');
+				const award = mode.press(first, {player: 2, time: 251}, config, () => 0);
 				if (award === null) throw new Error('Missing award');
 				expect(award.delta).toBe(1);
-				expect(staticState(award.stimulus).showing).toBe('gap');
-				expect(award.stimulus.blocked).toEqual([]);
+				const next = staticState(award.stimulus);
+				expect(next.showing).toBe('claim');
+				expect(next.id).toBe(first.id + 1);
+				expect(next.until).toBe(251 + claimHoldMs[difficulty]);
+				expect(next.blocked).toEqual([]);
+				expect(mode.present(next).kind).not.toBe('blank');
 			});
-			test(`${mode.id} ${difficulty}: false board persists, timeout scores nothing and resets blocks`, function() {
+			test(`${mode.id} ${difficulty}: false board persists, then timeout immediately presents the next puzzle`, function() {
 				const config = {...staticDefaults(staticModeId(mode)), difficulty};
-				const gap = mode.create(0, 1, config, () => 0.9);
-				const claim = mode.advance(gap, gap.until, config, () => 0.9);
-				const miss = mode.press(claim, {player: 1, time: gap.until + 1}, config, () => 0.9);
+				const claim = staticState(mode.create(0, 1, config, () => 0.9));
+				const miss = mode.press(claim, {player: 1, time: 1}, config, () => 0.9);
 				if (miss === null) throw new Error('Missing penalty');
 				expect(miss.delta).toBe(-1);
 				expect(staticState(miss.stimulus).showing).toBe('claim');
-				expect(mode.press(miss.stimulus, {player: 1, time: gap.until + 2}, config, () => 0.9)).toBeNull();
-				expect(mode.press(miss.stimulus, {player: 2, time: gap.until + 2}, config, () => 0.9)?.delta).toBe(-1);
+				expect(mode.press(miss.stimulus, {player: 1, time: 2}, config, () => 0.9)).toBeNull();
+				expect(mode.press(miss.stimulus, {player: 2, time: 2}, config, () => 0.9)?.delta).toBe(-1);
 				expect(mode.advance(miss.stimulus, claim.until - 1, config, () => 0.9)).toBe(miss.stimulus);
 				const next = mode.advance(miss.stimulus, claim.until, config, () => 0.9);
-				expect(staticState(next).showing).toBe('gap'); expect(next.blocked).toEqual([]);
+				expect(staticState(next).showing).toBe('claim'); expect(next.id).toBe(claim.id + 1);
+				expect(next.blocked).toEqual([]);
+				expect(mode.present(next).kind).not.toBe('blank');
 			});
 		}
-		test(`${mode.id}: runner rejects deadline input and pause resumes into fresh gap`, function() {
+		test(`${mode.id}: runner rejects deadline input and pause resumes into a fresh puzzle`, function() {
 			const {game, advance} = fixture(mode, 'easy', () => 0);
-			advance(250); game.press(1); advance(250); game.pause('hidden');
+			const first = staticState(game.state.stimulus);
+			advance(250); game.press(1);
+			expect(staticState(game.state.stimulus).id).toBe(first.id + 1);
+			advance(250); game.pause('hidden');
 			const remaining = game.state.remaining;
 			advance(60_000); expect(game.state.remaining).toBe(remaining);
 			game.resume(); game.press(1); game.press(2); advance(game.config.countdownMs);
-			expect(staticState(game.state.stimulus).showing).toBe('gap');
+			expect(staticState(game.state.stimulus).showing).toBe('claim');
 			expect(game.state.scores.total[1]).toBe(1);
 			advance(250); advance(remaining - 250, false); game.press(2);
 			expect(game.state.phase).toBe('match-results'); expect(game.state.scores.total[2]).toBe(0);

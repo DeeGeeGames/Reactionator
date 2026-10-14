@@ -1,4 +1,4 @@
-import {award, defineMode, difficulties, duration, validateShared, type Config, type Difficulty, type Presentation, type RuntimeMode, type StaticConfig, type StaticModeId, type StaticPayload, type StaticStimulus, type Stimulus} from './mode';
+import {award, defineMode, difficulties, validateShared, type Config, type Difficulty, type Presentation, type RuntimeMode, type StaticConfig, type StaticModeId, type StaticPayload, type StaticStimulus, type Stimulus} from './mode';
 
 export const claimHoldMs: Readonly<Record<Difficulty, number>> = {
 	easy: 5_000, medium: 3_500, hard: 2_500, insane: 1_800,
@@ -26,15 +26,16 @@ const payloadPresentation = function(payload: StaticPayload, prompt: string): Pr
 	return {kind: 'text', prompt, text: `${first} ${terms.join(' ')} = ${payload.result}`};
 };
 export const createStaticMode = function(options: StaticModeOptions): RuntimeMode {
-	const gap = function(time: number, id: number, config: StaticConfig, random: () => number): StaticStimulus {
-		return {mode: options.id, showing: 'gap', id, until: time + duration(config.gap, random), blocked: []};
+	const claim = function(time: number, id: number, config: StaticConfig, random: () => number): StaticStimulus {
+		return {mode: options.id, showing: 'claim', id, until: time + claimHoldMs[config.difficulty], blocked: [],
+			payload: options.generate(config.difficulty, random)};
 	};
 	return defineMode<StaticConfig, StaticStimulus>({
 		id: options.id, name: options.name, defaults: staticDefaults(options.id),
 		rules: [
 			options.prompt,
-			'First eligible correct press: +1 and a fresh blank gap.',
-			'Wrong claim or blank gap: −1 once per player. A blank false start also blocks the next claim.',
+			'First eligible correct press: +1 and an immediate fresh puzzle.',
+			'Wrong claim: −1 once per player.',
 			'Missing a claim costs nothing. Release before pressing again.',
 		],
 		isConfig: function(config: Config): config is StaticConfig { return config.mode === options.id; },
@@ -43,16 +44,14 @@ export const createStaticMode = function(options: StaticModeOptions): RuntimeMod
 			if (!difficulties.includes(config.difficulty)) throw new Error('Invalid game configuration');
 			return {...validateShared(config), mode: options.id, difficulty: config.difficulty};
 		},
-		create: gap,
+		create: claim,
 		advance: function(state, time, config, random) {
 			if (time < state.until) return state;
-			if (state.showing === 'claim') return gap(time, state.id + 1, config, random);
-			return {mode: options.id, showing: 'claim', id: state.id + 1, until: time + claimHoldMs[config.difficulty],
-				blocked: state.blocked, payload: options.generate(config.difficulty, random)};
+			return claim(time, state.id + 1, config, random);
 		},
 		press: function(state, {player, time}, config, random) {
 			if (state.blocked.includes(player)) return null;
-			if (state.showing === 'claim' && options.isTrue(state.payload)) return award(state, player, gap(time, state.id + 1, config, random));
+			if (state.showing === 'claim' && options.isTrue(state.payload)) return award(state, player, claim(time, state.id + 1, config, random));
 			return {stimulus: {...state, blocked: [...state.blocked, player]}, delta: -1, player, identity: state.id};
 		},
 		present: function(state) {
