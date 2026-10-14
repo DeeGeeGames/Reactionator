@@ -3,6 +3,7 @@ import {circleDefaults} from './circle-among-squares';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
 import {difficulties, type Presentation} from './mode';
+import {defaultConfigFor, listPlayableModes} from './modes';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
@@ -15,10 +16,18 @@ const isLocalPreviewHost = function(hostname: string): boolean {
 	if (first === undefined || second === undefined) return false;
 	return first === 10 || first === 127 || (first === 192 && second === 168) || (first === 172 && second >= 16 && second <= 31);
 };
-const requestedPreview = isLocalPreviewHost(window.location.hostname)
-	? new URLSearchParams(window.location.search).get('circle-preview') : null;
+const previewParams = new URLSearchParams(window.location.search);
+const localPreview = isLocalPreviewHost(window.location.hostname);
+const requestedPreview = localPreview ? previewParams.get('circle-preview') : null;
 const previewDifficulty = difficulties.find(function(difficulty) { return difficulty === requestedPreview; });
-const previewMatch = previewDifficulty === undefined ? undefined : {
+const requestedMode = localPreview ? previewParams.get('mode-preview') : null;
+const selectedPreviewMode = listPlayableModes().find(function(mode) { return mode.id === requestedMode; });
+const selectedPreviewConfig = selectedPreviewMode === undefined ? undefined : defaultConfigFor(selectedPreviewMode.id);
+const selectedDifficulty = difficulties.find(function(difficulty) { return difficulty === previewParams.get('difficulty'); }) ?? 'easy';
+const previewMatch = selectedPreviewConfig !== undefined ? {
+	rounds: 1,
+	modes: ['difficulty' in selectedPreviewConfig ? {...selectedPreviewConfig, difficulty: selectedDifficulty} : selectedPreviewConfig],
+} : previewDifficulty === undefined ? undefined : {
 	rounds: 1,
 	modes: [{...circleDefaults, difficulty: previewDifficulty}],
 };
@@ -257,6 +266,44 @@ let frameId = 0;
 let fieldSceneId: number | null = null;
 const fieldElements = new Map<string, HTMLSpanElement>();
 const paintBoard = function(presentation: Presentation): void {
+	if (presentation.kind === 'symbols' || presentation.kind === 'text') {
+		const key = presentation.kind === 'symbols' ? presentation.symbols.join(',') : `${presentation.text}:${presentation.ink ?? 'white'}`;
+		if (target.dataset.board === presentation.kind && target.dataset.content === key) return;
+		target.replaceChildren();
+		fieldElements.clear();
+		fieldSceneId = null;
+		target.dataset.board = presentation.kind;
+		target.dataset.color = 'blank';
+		target.dataset.content = key;
+		if (presentation.kind === 'text') {
+			for (const side of ['far', 'near']) {
+				const copy = make('span', `challenge-text ${side === 'far' ? 'far-text' : ''}`, presentation.text);
+				copy.dataset.ink = presentation.ink ?? 'white';
+				target.append(copy);
+			}
+			return;
+		}
+		target.style.setProperty('--symbol-columns', String(Math.ceil(presentation.symbols.length / 2)));
+		for (const shape of presentation.symbols) {
+			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			svg.setAttribute('viewBox', '0 0 100 100');
+			svg.dataset.symbol = shape;
+			const figure = document.createElementNS('http://www.w3.org/2000/svg', shape === 'circle' ? 'circle' : 'polygon');
+			if (shape === 'circle') {
+				figure.setAttribute('cx', '50'); figure.setAttribute('cy', '50'); figure.setAttribute('r', '37');
+			} else {
+				const points = {
+					square: '15,15 85,15 85,85 15,85', triangle: '50,10 92,85 8,85',
+					diamond: '50,5 95,50 50,95 5,50', pentagon: '50,5 93,36 77,87 23,87 7,36',
+					star: '50,5 61,35 95,36 69,57 78,90 50,71 22,90 31,57 5,36 39,35',
+				};
+				figure.setAttribute('points', points[shape]);
+			}
+			svg.append(figure);
+			target.append(svg);
+		}
+		return;
+	}
 	if (presentation.kind === 'field') {
 		if (target.dataset.board !== 'field' || fieldSceneId !== presentation.sceneId) {
 			target.replaceChildren();

@@ -189,3 +189,33 @@ button:disabled { cursor: default; }
 	}
 	.table[data-phase='playing'][data-board='field'] .board-slot { grid-row: 1 / 3; height: auto; }
 }
+
+.table[data-phase='playing'][data-board='symbols'] .target,
+.table[data-phase='playing'][data-board='text'] .target {
+	width: min(100%, 360px); height: auto; background: transparent;
+}
+.table[data-prompt='both'] .target { order: 2; }
+.target[data-board='symbols'] {
+	display: grid; grid-template-columns: repeat(var(--symbol-columns), minmax(0, 1fr)); gap: 6px;
+}
+.target[data-board='symbols'] svg { width: 100%; max-height: 52px; fill: #ffc857; }
+.target[data-board='text'] { display: flex; flex-direction: column; gap: 16px; }
+.table[data-prompt='both'] .challenge-text { order: 0; }
+.challenge-text { display: block; font-size: clamp(18px, 4.5vw, 36px); font-weight: bold; white-space: nowrap; }
+.challenge-text[data-ink='red'] { color: #ff4040; }
+.challenge-text[data-ink='blue'] { color: #4d82ff; }
+.challenge-text[data-ink='green'] { color: #25ce65; }
+.challenge-text[data-ink='yellow'] { color: #ffe23d; }
+.challenge-text[data-ink='purple'] { color: #bd7aff; }
+.challenge-text[data-ink='orange'] { color: #ff982b; }
+.challenge-text[data-ink='black'] { color: #000; -webkit-text-stroke: 1px #d8dce5; }
+.challenge-text[data-ink='white'] { color: #fff; }
+@media (orientation: landscape) {
+	.table[data-phase='playing'][data-board='symbols'] .center,
+	.table[data-phase='playing'][data-board='text'] .center {
+		grid-template-columns: minmax(72px, 1fr) minmax(0, 1.6fr) minmax(72px, 1fr);
+	}
+	.target[data-board='symbols'] svg { max-height: 28px; }
+	.challenge-text { font-size: clamp(14px, 2.8vw, 32px); }
+	.target[data-board='text'] { gap: 8px; }
+}

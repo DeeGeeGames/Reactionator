@@ -37,7 +37,18 @@ export interface CircleAmongSquaresConfig extends SharedConfig {
 	readonly mode: 'circle-among-squares';
 	readonly difficulty: Difficulty;
 }
-export type Config = PressOnWhiteConfig | CircleAmongSquaresConfig;
+export type StaticModeId = 'color-word' | 'true-equation' | 'three-of-a-kind' | 'five-different' | 'matching-pair';
+export type SymbolKind = 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'pentagon';
+export type WordColor = 'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'black' | 'white';
+export interface StaticConfig extends SharedConfig {
+	readonly mode: StaticModeId;
+	readonly difficulty: Difficulty;
+}
+export type StaticPayload =
+	| {readonly kind: 'symbols'; readonly symbols: readonly SymbolKind[]}
+	| {readonly kind: 'color-word'; readonly word: WordColor; readonly ink: WordColor}
+	| {readonly kind: 'equation'; readonly operands: readonly number[]; readonly operators: readonly ('+' | '-' | '×')[]; readonly result: number};
+export type Config = PressOnWhiteConfig | CircleAmongSquaresConfig | StaticConfig;
 export interface StimulusCore {
 	readonly mode: string;
 	readonly id: number;
@@ -61,10 +72,22 @@ export interface CircleClaimStimulus extends StimulusCore {
 	readonly circle: CircleShape | null;
 }
 export type CircleStimulus = CircleGapStimulus | CircleClaimStimulus;
-export type Stimulus = PressOnWhiteStimulus | CircleStimulus;
+export interface StaticGapStimulus extends StimulusCore {
+	readonly mode: StaticModeId;
+	readonly showing: 'gap';
+}
+export interface StaticClaimStimulus extends StimulusCore {
+	readonly mode: StaticModeId;
+	readonly showing: 'claim';
+	readonly payload: StaticPayload;
+}
+export type StaticStimulus = StaticGapStimulus | StaticClaimStimulus;
+export type Stimulus = PressOnWhiteStimulus | CircleStimulus | StaticStimulus;
 export type Presentation =
 	| { readonly kind: 'swatch'; readonly color: Color | 'blank'; readonly prompt: string }
 	| { readonly kind: 'field'; readonly prompt: string; readonly sceneId: number; readonly circleVisible: boolean; readonly shapes: readonly FieldShape[] }
+	| { readonly kind: 'symbols'; readonly prompt: string; readonly symbols: readonly SymbolKind[] }
+	| { readonly kind: 'text'; readonly prompt: string; readonly text: string; readonly ink?: WordColor }
 	| { readonly kind: 'blank'; readonly prompt: string };
 export interface NormalizedPress { readonly player: Player; readonly time: number; readonly players?: readonly Player[] }
 export interface Outcome {
