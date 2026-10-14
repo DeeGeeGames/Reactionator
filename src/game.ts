@@ -98,7 +98,7 @@ export class Game {
 		this.consumeTime(now);
 		if (this.state.phase !== 'playing' || this.state.stimulus === null) return;
 		// Input uses committed presentation, never advances a scheduled color.
-		const outcome = this.mode.press(this.state.stimulus, {player, time: now}, this.config, this.random);
+		const outcome = this.mode.press(this.state.stimulus, {player, time: now, players: this.state.players}, this.config, this.random);
 		if (outcome === null) return;
 		const event = {id: `${this.session}:${this.state.round}:${outcome.identity}:${player}:${this.sequence++}`, player, delta: outcome.delta};
 		this.identity = Math.max(this.identity, outcome.stimulus.id);

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test';
-import {circleDefaults} from './circle-among-squares';
+import {circleAmongSquares, circleDefaults} from './circle-among-squares';
 import {DEFAULT_ROUNDS, Game, type MatchConfig} from './game';
 import {defaults, emptyScores, registerMode, requireMode} from './mode';
 import {defaultConfigFor, drawMode, listPlayableModes} from './modes';
@@ -11,6 +11,19 @@ const fixture = function(rounds = DEFAULT_ROUNDS, random: () => number = functio
 };
 const ready = function(game: Game): void {
 	for (const player of game.state.players) game.press(player);
+};
+const advanceUntilCircleVisible = function(game: Game, advance: (ms: number) => void): void {
+	const config = game.config;
+	if (config.mode !== 'circle-among-squares') return;
+	for (let elapsed = 0; elapsed < 10_000; elapsed += 100) {
+		const state = game.state.stimulus;
+		if (state?.mode === 'circle-among-squares') {
+			const probe = circleAmongSquares.press({...state, blocked: []}, {player: 1, time: 0}, config, function() { return 0; });
+			if (probe?.delta === 1) return;
+		}
+		advance(100);
+	}
+	throw new Error('Expected the moving circle to become visible');
 };
 
 describe('random mode cycles', function() {
@@ -95,6 +108,7 @@ describe('mixed matches', function() {
 					expect(game.state.stimulus?.blocked).toEqual([]);
 					advance(250);
 					if (game.config.mode === 'circle-among-squares') advance(250);
+					advanceUntilCircleVisible(game, advance);
 					game.press(1);
 					expect(game.state.scores.total[1]).toBe(round);
 					advance(game.config.roundMs);
