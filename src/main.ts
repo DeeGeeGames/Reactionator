@@ -1,11 +1,28 @@
 import './style.css';
+import {circleDefaults} from './circle-among-squares';
 import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
-import {type Presentation} from './mode';
+import {difficulties, type Presentation} from './mode';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
-const game = new Game(performance.now.bind(performance), Math.random);
+const isLocalPreviewHost = function(hostname: string): boolean {
+	if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local') || hostname === '[::1]') return true;
+	const octets = hostname.split('.').map(Number);
+	if (octets.length !== 4 || octets.some(function(octet) { return !Number.isInteger(octet) || octet < 0 || octet > 255; })) return false;
+	const first = octets[0];
+	const second = octets[1];
+	if (first === undefined || second === undefined) return false;
+	return first === 10 || first === 127 || (first === 192 && second === 168) || (first === 172 && second >= 16 && second <= 31);
+};
+const requestedPreview = isLocalPreviewHost(window.location.hostname)
+	? new URLSearchParams(window.location.search).get('circle-preview') : null;
+const previewDifficulty = difficulties.find(function(difficulty) { return difficulty === requestedPreview; });
+const previewMatch = previewDifficulty === undefined ? undefined : {
+	rounds: 1,
+	modes: [{...circleDefaults, difficulty: previewDifficulty}],
+};
+const game = new Game(performance.now.bind(performance), Math.random, previewMatch);
 const make = function<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ''): HTMLElementTagNameMap[K] {
 	const element = document.createElement(tag);
 	element.className = className;
@@ -237,49 +254,57 @@ window.addEventListener('blur', onBlur);
 window.addEventListener('focus', onFocus);
 document.addEventListener('visibilitychange', onVisibility);
 let frameId = 0;
-let boardSignature = '';
+let fieldSceneId: number | null = null;
+const fieldElements = new Map<string, HTMLSpanElement>();
 const paintBoard = function(presentation: Presentation): void {
-	const signature = presentation.kind === 'glyphs'
-		? `glyphs:${presentation.columns}:${presentation.rows}:${presentation.cells.map(function(cell) { return `${cell.shape}/${cell.color}/${cell.detail}`; }).join(',')}`
-		: presentation.kind === 'swatch' ? `swatch:${presentation.color}` : 'blank';
-	if (signature === boardSignature) return;
-	boardSignature = signature;
-	if (presentation.kind === 'glyphs' && target.dataset.board === 'glyphs'
-		&& target.style.getPropertyValue('--columns') === String(presentation.columns)
-		&& target.style.getPropertyValue('--rows') === String(presentation.rows)
-		&& target.children.length === presentation.cells.length) {
-		for (const [index, cell] of presentation.cells.entries()) {
-			const glyph = target.children[index];
-			if (!(glyph instanceof HTMLElement)) throw new Error('Missing board glyph');
-			if (glyph.dataset.shape !== cell.shape) glyph.dataset.shape = cell.shape;
-			if (glyph.dataset.color !== cell.color) glyph.dataset.color = cell.color;
-			if (glyph.dataset.detail !== cell.detail) glyph.dataset.detail = cell.detail;
+	if (presentation.kind === 'field') {
+		if (target.dataset.board !== 'field' || fieldSceneId !== presentation.sceneId) {
+			target.replaceChildren();
+			fieldElements.clear();
+			fieldSceneId = presentation.sceneId;
+		}
+		target.dataset.board = 'field';
+		target.dataset.color = 'blank';
+		const visibleIds = new Set(presentation.shapes.map(function(shape) { return shape.id; }));
+		for (const shape of presentation.shapes) {
+			let glyph = fieldElements.get(shape.id);
+			if (glyph === undefined) {
+				glyph = make('span', 'glyph');
+				fieldElements.set(shape.id, glyph);
+				target.append(glyph);
+			}
+			if (glyph.dataset.shape !== shape.shape) glyph.dataset.shape = shape.shape;
+			if (glyph.dataset.color !== shape.color) glyph.dataset.color = shape.color;
+			const visible = shape.shape !== 'circle' || presentation.circleVisible;
+			if (glyph.dataset.visible !== String(visible)) glyph.dataset.visible = String(visible);
+			if (glyph.style.left !== `${shape.x * 100}%`) glyph.style.left = `${shape.x * 100}%`;
+			if (glyph.style.top !== `${shape.y * 100}%`) glyph.style.top = `${shape.y * 100}%`;
+			if (glyph.style.width !== `${shape.size * 100}%`) glyph.style.width = `${shape.size * 100}%`;
+			if (glyph.style.height !== `${shape.size * 100}%`) glyph.style.height = `${shape.size * 100}%`;
+		}
+		for (const [id, glyph] of fieldElements) {
+			if (visibleIds.has(id)) continue;
+			glyph.remove();
+			fieldElements.delete(id);
 		}
 		return;
 	}
-	target.replaceChildren();
-	target.style.removeProperty('--columns');
-	target.style.removeProperty('--rows');
 	if (presentation.kind === 'swatch') {
-		target.dataset.board = 'swatch';
-		target.dataset.color = presentation.color;
+		if (target.dataset.board !== 'swatch' || target.dataset.color !== presentation.color || target.children.length > 0) {
+			target.replaceChildren();
+			fieldElements.clear();
+			fieldSceneId = null;
+			target.dataset.board = 'swatch';
+			target.dataset.color = presentation.color;
+		}
 		return;
 	}
+	if (target.dataset.board === 'blank' && target.children.length === 0 && fieldSceneId === null) return;
+	target.replaceChildren();
+	fieldElements.clear();
+	fieldSceneId = null;
 	target.dataset.color = 'blank';
-	if (presentation.kind === 'blank') {
-		target.dataset.board = 'blank';
-		return;
-	}
-	target.dataset.board = 'glyphs';
-	target.style.setProperty('--columns', String(presentation.columns));
-	target.style.setProperty('--rows', String(presentation.rows));
-	for (const cell of presentation.cells) {
-		const glyph = make('span', 'glyph');
-		glyph.dataset.shape = cell.shape;
-		glyph.dataset.color = cell.color;
-		glyph.dataset.detail = cell.detail;
-		target.append(glyph);
-	}
+	target.dataset.board = 'blank';
 };
 let cacheSuspended = false;
 const frame = function(): void {

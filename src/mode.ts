@@ -4,12 +4,24 @@ export const difficulties = ['easy', 'medium', 'hard', 'insane'] as const;
 export type Difficulty = typeof difficulties[number];
 export type GlyphShape = 'square' | 'circle';
 export type GlyphColor = 'coral' | 'gold' | 'teal' | 'blue' | 'violet';
-export type GlyphDetail = 'solid' | 'stripes' | 'dots';
-export interface GlyphCell {
-	readonly shape: GlyphShape;
-	readonly color: GlyphColor;
-	readonly detail: GlyphDetail;
+export interface ShapeMotion {
+	readonly originX: number;
+	readonly originY: number;
+	readonly velocityX: number;
+	readonly velocityY: number;
+	readonly startedAt: number;
 }
+export interface FieldShapeCore {
+	readonly id: string;
+	readonly x: number;
+	readonly y: number;
+	readonly size: number;
+	readonly color: GlyphColor;
+	readonly motion: ShapeMotion;
+}
+export interface SquareShape extends FieldShapeCore { readonly shape: 'square' }
+export interface CircleShape extends FieldShapeCore { readonly shape: 'circle' }
+export type FieldShape = SquareShape | CircleShape;
 export interface SharedConfig {
 	readonly mode: string;
 	readonly roundMs: number;
@@ -43,19 +55,18 @@ export interface CircleGapStimulus extends StimulusCore {
 export interface CircleClaimStimulus extends StimulusCore {
 	readonly mode: 'circle-among-squares';
 	readonly showing: 'claim';
-	readonly columns: number;
-	readonly rows: number;
-	readonly cells: readonly GlyphCell[];
-	readonly circleCell: number | null;
-	readonly circleRevealed: boolean;
+	readonly sceneId: number;
+	readonly sceneStartedAt: number;
+	readonly squares: readonly SquareShape[];
+	readonly circle: CircleShape | null;
 }
 export type CircleStimulus = CircleGapStimulus | CircleClaimStimulus;
 export type Stimulus = PressOnWhiteStimulus | CircleStimulus;
 export type Presentation =
 	| { readonly kind: 'swatch'; readonly color: Color | 'blank'; readonly prompt: string }
-	| { readonly kind: 'glyphs'; readonly prompt: string; readonly columns: number; readonly rows: number; readonly cells: readonly GlyphCell[] }
+	| { readonly kind: 'field'; readonly prompt: string; readonly sceneId: number; readonly circleVisible: boolean; readonly shapes: readonly FieldShape[] }
 	| { readonly kind: 'blank'; readonly prompt: string };
-export interface NormalizedPress { readonly player: Player; readonly time: number }
+export interface NormalizedPress { readonly player: Player; readonly time: number; readonly players?: readonly Player[] }
 export interface Outcome {
 	readonly stimulus: Stimulus;
 	readonly delta: -1 | 1;
