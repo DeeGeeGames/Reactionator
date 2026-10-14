@@ -4,7 +4,9 @@
 
 A shared-screen browser reaction game for 2–4 people around one phone or tablet. Ten rounds of 20 seconds by default; cumulative scores decide the winner, including shared wins and negative totals. Each round randomly draws from the playable modes that have not appeared in the current cycle. After every mode has appeared, the full pool becomes eligible again. Cycle boundaries can repeat the last mode of the preceding cycle. Five modes over fifteen rounds would produce three complete cycles, each in a random order.
 
-Setup only asks for the player count. Press on White and Circle among squares participate automatically, using their registered default configurations; Circle among squares uses easy. The selected mode's name and scoring objective appear during readiness and the countdown. In Press on White, the first eligible press on white earns +1; colors or blank cost −1. In Circle among squares, the first eligible press on a board containing a circle earns +1; all squares or blank cost −1. A blank false start locks that player out of the next target. There is no mode, round-count, or difficulty picker. Set the round count in code with `DEFAULT_ROUNDS` in `src/game.ts`, or pass a positive integer in `MatchConfig.rounds` when creating a game.
+Setup asks for the player count and offers a Settings page to enable or disable game types in the rotation. All seven playable types start enabled; keep at least one enabled. Choices save automatically in this browser and apply to subsequent matches and rematches. Every enabled type appears once before any repeat. Newly registered playable types start enabled. If browser storage is unavailable, choices still apply for the current page session. Local single-mode preview URLs keep their explicit preview configuration and hide Settings.
+
+Each type uses its registered default configuration; Circle among squares uses easy. The selected mode's name and scoring objective appear during readiness and the countdown. In Press on White, the first eligible press on white earns +1; colors or blank cost −1. In Circle among squares, the first eligible press on a board containing a circle earns +1; all squares or blank cost −1. A blank false start locks that player out of the next target. There is no round-count or difficulty picker. Set the round count in code with `DEFAULT_ROUNDS` in `src/game.ts`, or pass a positive integer in `MatchConfig.rounds` when creating a game.
 
 ## Run
 
@@ -18,7 +20,7 @@ bun run test
 bun run build
 ```
 
-The development server prints its URL and listens on all interfaces at port 3000. In the dev script, `--host` has to follow `index.html`; Bun ignores that server flag when it comes first. If port 3000 is taken, Bun prints the next free port. `dist/` is the static production output. `bun run preview` serves that output on `http://127.0.0.1:4173`. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller gameplay input, persistence, offline installation, and sound are outside this foundation. Setup buttons support Tab and Enter/Space.
+The development server prints its URL and listens on all interfaces at port 3000. In the dev script, `--host` has to follow `index.html`; Bun ignores that server flag when it comes first. If port 3000 is taken, Bun prints the next free port. `dist/` is the static production output. `bun run preview` serves that output on `http://127.0.0.1:4173`. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller gameplay input, offline installation, and sound are outside this foundation. Setup buttons support Tab and Enter/Space.
 
 A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://david0178418.github.io/4player-reaction/`. Built asset URLs are relative to `index.html`, so the same output works at `/` and under `/4player-reaction/`.
 

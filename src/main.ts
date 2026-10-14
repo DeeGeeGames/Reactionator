@@ -4,6 +4,7 @@ import {Game, type Phase} from './game';
 import {attachPlayerInput} from './input';
 import {difficulties, type Presentation} from './mode';
 import {defaultConfigFor, listPlayableModes} from './modes';
+import {enabledModesFromStorage, matchForEnabledModes, ROTATION_STORAGE_KEY, serializeEnabledModes} from './settings';
 
 const app = document.querySelector('#app');
 if (!(app instanceof HTMLElement)) throw new Error('App container is missing');
@@ -31,7 +32,14 @@ const previewMatch = selectedPreviewConfig !== undefined ? {
 	rounds: 1,
 	modes: [{...circleDefaults, difficulty: previewDifficulty}],
 };
-const game = new Game(performance.now.bind(performance), Math.random, previewMatch);
+let storageUnavailable = false;
+const loadEnabledModes = function(): readonly string[] {
+	try { return enabledModesFromStorage(window.localStorage.getItem(ROTATION_STORAGE_KEY)); }
+	catch { storageUnavailable = true; return enabledModesFromStorage(null); }
+};
+let enabledModes = loadEnabledModes();
+let settingsOpen = false;
+let game = new Game(performance.now.bind(performance), Math.random, previewMatch ?? matchForEnabledModes(enabledModes));
 const make = function<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ''): HTMLElementTagNameMap[K] {
 	const element = document.createElement(tag);
 	element.className = className;
@@ -53,7 +61,7 @@ const eyebrow = make('p', 'eyebrow', 'ONE SCREEN · EVERYONE PLAYS');
 const title = make('h1', 'title', 'Reaction mix');
 const description = make('p', 'description');
 const rules = make('div', 'rules');
-for (const text of ['Every game appears once before any repeat.', 'Correct press: +1. Wrong or blank press: −1.', 'A blank false start locks you out of the next target. Release before pressing again.']) rules.append(make('p', '', text));
+for (const text of ['Every enabled game appears once before any repeat.', 'Correct press: +1. Wrong or blank press: −1.', 'A blank false start locks you out of the next target. Release before pressing again.']) rules.append(make('p', '', text));
 const choices = make('div', 'choices');
 choices.setAttribute('role', 'group');
 choices.setAttribute('aria-label', 'Player count');
@@ -81,10 +89,61 @@ const scoreRows = ([1, 2, 3, 4] as const).map(function(player) {
 });
 const actions = make('div', 'actions');
 const start = button('Start match', function() { if (layoutReady()) { game.start(); render(); } });
+const openSettings = button('Settings', function() {
+	if (game.state.phase !== 'setup') return;
+	settingsOpen = true;
+	render();
+	settingsTitle.focus();
+});
 const resume = button('Resume', function() { if (layoutReady()) { game.resume(); render(); } });
 const rematch = button('Rematch', function() { if (layoutReady()) { game.rematch(); render(); } });
 const end = button('Change setup', function() { game.end(); render(); });
-actions.append(start, resume, rematch, end);
+actions.append(start, openSettings, resume, rematch, end);
+const settings = make('section', 'settings');
+settings.setAttribute('aria-labelledby', 'settings-title');
+const settingsTitle = make('h1', 'title', 'Settings');
+settingsTitle.id = 'settings-title';
+settingsTitle.tabIndex = -1;
+const settingsDescription = make('p', 'description', 'Choose the game types in the rotation. Keep at least one enabled.');
+const settingsList = make('div', 'settings-list');
+settingsList.setAttribute('role', 'group');
+settingsList.setAttribute('aria-label', 'Game types');
+const modeChoices = listPlayableModes().map(function(mode) {
+	const choice = button(mode.name, function() {
+		if (!settingsOpen || game.state.phase !== 'setup') return;
+		const enabled = enabledModes.includes(mode.id);
+		if (enabled && enabledModes.length === 1) return;
+		enabledModes = enabled ? enabledModes.filter(function(id) { return id !== mode.id; }) : [...enabledModes, mode.id];
+		const count = game.state.players.length;
+		game = new Game(performance.now.bind(performance), Math.random, matchForEnabledModes(enabledModes));
+		game.select(count);
+		try {
+			window.localStorage.setItem(ROTATION_STORAGE_KEY, serializeEnabledModes(enabledModes));
+			storageUnavailable = false;
+		} catch { storageUnavailable = true; }
+		render();
+	});
+	choice.className = 'action mode-choice';
+	choice.setAttribute('role', 'checkbox');
+	choice.setAttribute('aria-label', mode.name);
+	const label = make('span', '');
+	label.append(make('strong', '', mode.name), make('span', 'mode-rule', mode.rules[0] ?? ''));
+	const status = make('span', 'mode-status');
+	status.setAttribute('aria-hidden', 'true');
+	choice.replaceChildren(label, status);
+	settingsList.append(choice);
+	return {id: mode.id, choice, status};
+});
+const settingsNotice = make('p', 'hint');
+settingsNotice.setAttribute('role', 'status');
+const settingsActions = make('div', 'actions');
+const closeSettings = button('Back to setup', function() {
+	settingsOpen = false;
+	render();
+	openSettings.focus();
+});
+settingsActions.append(closeSettings);
+settings.append(settingsTitle, settingsDescription, settingsList, settingsNotice, settingsActions);
 const hint = make('p', 'hint');
 const nearText = make('div', 'status-copy near-text');
 nearText.append(eyebrow, title, description, rules, choices, countdown, nearPrompt, timing, scoreTable);
@@ -133,7 +192,7 @@ const controls = ([1, 2, 3, 4] as const).map(function(player) {
 	return {player, element, score, status, feedback};
 });
 center.append(toolbar);
-table.append(center);
+table.append(center, settings);
 app.append(table);
 let disposed = false;
 let settled = true;
@@ -162,6 +221,15 @@ const render = function(): void {
 	const state = game.state;
 	if (state.phase !== lastPhase) { input.invalidate(); lastPhase = state.phase; }
 	const setup = state.phase === 'setup';
+	show(settings, setup && settingsOpen);
+	show(center, !settingsOpen);
+	for (const {id, choice, status} of modeChoices) {
+		const enabled = enabledModes.includes(id);
+		choice.setAttribute('aria-checked', String(enabled));
+		choice.setAttribute('aria-disabled', String(enabled && enabledModes.length === 1));
+		status.textContent = enabled ? 'On' : 'Off';
+	}
+	settingsNotice.textContent = `${enabledModes.length} of ${modeChoices.length} enabled. ${storageUnavailable ? 'Changes apply here, but could not be saved in this browser.' : 'Changes save automatically in this browser.'}`;
 	const ready = state.phase === 'ready';
 	const playing = state.phase === 'playing';
 	const counting = state.phase === 'countdown';
@@ -178,7 +246,7 @@ const render = function(): void {
 	title.textContent = setup ? 'Reaction mix' : paused ? 'Paused'
 		: roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
-	description.textContent = setup ? `${game.match.rounds} random rounds. Choose 2–4 players.` : paused ? state.pauseReason
+	description.textContent = setup ? `${game.match.rounds} random rounds · ${game.match.modes.length} game ${game.match.modes.length === 1 ? 'type' : 'types'}. Choose 2–4 players.` : paused ? state.pauseReason
 		: ready || counting ? `${game.mode.rules[0] ?? ''}${ready ? ' Each player: press your control when ready.' : ''}`
 			: roundResults ? 'Everyone press your control when ready for the next round.'
 				: matchResults ? `${game.match.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
@@ -188,6 +256,7 @@ const render = function(): void {
 	show(farPrompt, playing && presentation.prompt !== '');
 	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
+	show(openSettings, setup && previewMatch === undefined);
 	show(pause, !setup && !paused && !matchResults);
 	show(fullscreen, setup && document.fullscreenEnabled);
 	end.textContent = paused ? 'End match' : 'Change setup';
