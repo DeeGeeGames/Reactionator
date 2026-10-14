@@ -1,6 +1,8 @@
-import {emptyScores, reduceScore, requireMode, roster, validateConfig, type Config, type Player, type RuntimeMode, type Scores, type Stimulus} from './mode';
+import {emptyScores, reduceScore, requireMode, roster, validateConfig, type AnswerExplanation, type Config, type Player, type Presentation, type RuntimeMode, type Scores, type Stimulus} from './mode';
 import {defaultConfigFor, drawMode, listPlayableModes} from './modes';
 export const DEFAULT_ROUNDS = 10;
+export const ANSWER_REVEAL_MS = 2_000;
+const WRONG_ANSWER_FEEDBACK_MS = 1_100;
 export interface MatchConfig {
 	readonly rounds: number;
 	readonly modes: readonly Config[];
@@ -16,6 +18,13 @@ export interface GameState {
 	readonly scores: Scores;
 	readonly stimulus: Stimulus | null;
 	readonly feedback: {readonly player: Player; readonly delta: number; readonly until: number} | null;
+	readonly answerFeedback: (AnswerExplanation & {
+		readonly player: Player;
+		readonly delta: -1 | 1;
+		readonly until: number;
+		readonly stimulusId: number;
+		readonly presentation: Presentation;
+	}) | null;
 	readonly pauseReason: string;
 }
 export class Game {
@@ -51,7 +60,7 @@ export class Game {
 	get mode(): RuntimeMode { return requireMode(this.config.mode); }
 	private initial(count: number): GameState {
 		return {phase: 'setup', players: roster(count), ready: [], round: 1, remaining: this.config.roundMs,
-			countdown: 3, scores: emptyScores(), stimulus: null, feedback: null, pauseReason: ''};
+			countdown: 3, scores: emptyScores(), stimulus: null, feedback: null, answerFeedback: null, pauseReason: ''};
 	}
 	select(count: number): void {
 		if (this.state.phase !== 'setup') return;
@@ -95,21 +104,37 @@ export class Game {
 			return;
 		}
 		if (this.state.phase !== 'playing') return;
+		if (this.state.answerFeedback?.delta === 1) {
+			if (now >= this.state.answerFeedback.until) this.frame();
+			else this.consumeTime(now);
+			return;
+		}
 		this.consumeTime(now);
 		if (this.state.phase !== 'playing' || this.state.stimulus === null) return;
+		const answeredStimulus = this.state.stimulus;
 		// Input uses committed presentation, never advances a scheduled color.
-		const outcome = this.mode.press(this.state.stimulus, {player, time: now, players: this.state.players}, this.config, this.random);
+		const outcome = this.mode.press(answeredStimulus, {player, time: now, players: this.state.players}, this.config, this.random);
 		if (outcome === null) return;
 		const event = {id: `${this.session}:${this.state.round}:${outcome.identity}:${player}:${this.sequence++}`, player, delta: outcome.delta};
 		this.identity = Math.max(this.identity, outcome.stimulus.id);
-		this.stateValue = {...this.state, stimulus: outcome.stimulus, scores: reduceScore(this.state.scores, event, this.state.players),
-			feedback: {player, delta: outcome.delta, until: now + 650}};
+		const explanation = this.mode.explain(answeredStimulus, outcome.delta);
+		const hold = outcome.delta > 0 ? ANSWER_REVEAL_MS : WRONG_ANSWER_FEEDBACK_MS;
+		const stimulus = outcome.delta > 0
+			? {...outcome.stimulus, until: outcome.stimulus.until + ANSWER_REVEAL_MS}
+			: outcome.stimulus;
+		this.stateValue = {...this.state, stimulus, scores: reduceScore(this.state.scores, event, this.state.players),
+			feedback: {player, delta: outcome.delta, until: now + 650},
+			answerFeedback: {...explanation, player, delta: outcome.delta, until: now + hold,
+				stimulusId: outcome.identity, presentation: this.mode.present(answeredStimulus)}};
 	}
 	private consumeTime(now: number): void {
 		const remaining = Math.max(0, this.state.remaining - Math.max(0, now - this.lastTime));
 		this.lastTime = now;
 		this.stateValue = {...this.state, remaining};
-		if (remaining === 0) this.stateValue = {...this.state, phase: this.state.round === this.match.rounds ? 'match-results' : 'round-results', ready: [], stimulus: null, feedback: null};
+		const revealingAnswer = this.state.answerFeedback?.delta === 1 && now < this.state.answerFeedback.until;
+		if (remaining === 0 && !revealingAnswer) {
+			this.stateValue = {...this.state, phase: this.state.round === this.match.rounds ? 'match-results' : 'round-results', ready: [], stimulus: null, feedback: null, answerFeedback: null};
+		}
 	}
 	frame(): void {
 		const now = this.clock();
@@ -120,11 +145,24 @@ export class Game {
 		} else if (this.state.phase === 'countdown') {
 			this.stateValue = {...this.state, countdown: Math.ceil((this.countdownEnd - now) / 1000)};
 		} else if (this.state.phase === 'playing') {
-			this.consumeTime(now);
-			if (this.state.phase === 'playing' && this.state.stimulus !== null) {
-				const stimulus = this.mode.advance(this.state.stimulus, now, this.config, this.random);
-				this.identity = Math.max(this.identity, stimulus.id);
-				this.stateValue = {...this.state, stimulus};
+			const answerFeedback = this.state.answerFeedback;
+			if (answerFeedback?.delta === 1 && now < answerFeedback.until) {
+				this.consumeTime(now);
+			} else {
+				if (answerFeedback?.delta === 1) {
+					this.stateValue = {...this.state, answerFeedback: null};
+				} else if (answerFeedback !== null && (now >= answerFeedback.until || this.state.stimulus?.id !== answerFeedback.stimulusId)) {
+					this.stateValue = {...this.state, answerFeedback: null};
+				}
+				this.consumeTime(now);
+				if (this.state.phase === 'playing' && this.state.stimulus !== null) {
+					const stimulus = this.mode.advance(this.state.stimulus, now, this.config, this.random);
+					this.identity = Math.max(this.identity, stimulus.id);
+					const currentAnswerFeedback = this.state.answerFeedback;
+					this.stateValue = {...this.state, stimulus,
+						answerFeedback: currentAnswerFeedback?.delta === -1 && stimulus.id !== currentAnswerFeedback.stimulusId
+							? null : currentAnswerFeedback};
+				}
 			}
 		}
 		if (this.state.feedback !== null && now >= this.state.feedback.until) this.stateValue = {...this.state, feedback: null};
@@ -136,7 +174,7 @@ export class Game {
 			if (this.state.remaining === 0) return;
 		}
 		this.resumeRound = this.state.phase === 'playing' || this.resumeRound;
-		this.stateValue = {...this.state, phase: 'paused', ready: [], stimulus: null, feedback: null, pauseReason: reason};
+		this.stateValue = {...this.state, phase: 'paused', ready: [], stimulus: null, feedback: null, answerFeedback: null, pauseReason: reason};
 	}
 	resume(): void {
 		if (this.state.phase !== 'paused') return;

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test';
-import {Game} from './game';
+import {ANSWER_REVEAL_MS, Game} from './game';
 import {defaults, emptyScores, pressOnWhite, reduceScore, roster, validateConfig, type Color, type PressOnWhiteConfig, type Stimulus} from './mode';
 const shownColor = function(stimulus: Stimulus | null): Color | null {
 	if (stimulus === null || stimulus.mode !== 'press-on-white') throw new Error('Expected Press on White');
@@ -41,12 +41,17 @@ describe('committed mode and timing fairness', function() {
 		game.press(1); expect(game.state.scores.total[1]).toBe(-1);
 		game.press(3); expect(game.state.scores.total[3]).toBe(1); expect(shownColor(game.state.stimulus)).toBe(null);
 	});
-	test('equal timestamps follow arrival order; claimed white clears before later press', function() {
+	test('correct white stays visible for two seconds and ignores presses until the next challenge', function() {
 		const {game, advance} = fixture(); begin(game, advance); advance(250);
-		game.press(4); game.press(1); game.press(1);
-		expect(game.state.scores.total[4]).toBe(1); expect(game.state.scores.total[1]).toBe(-1);
-		advance(250); game.press(1); expect(game.state.scores.total[1]).toBe(-1);
-		game.press(4); expect(game.state.scores.total[4]).toBe(2);
+		game.press(4);
+		expect(game.state.scores.total[4]).toBe(1);
+		expect(game.state.answerFeedback?.delta).toBe(1);
+		expect(game.state.answerFeedback?.presentation).toMatchObject({kind: 'swatch', color: 'white'});
+		game.press(1); expect(game.state.scores.total[1]).toBe(0);
+		advance(ANSWER_REVEAL_MS - 1); expect(game.state.answerFeedback).not.toBeNull();
+		game.press(1); expect(game.state.scores.total[1]).toBe(0);
+		advance(1); expect(game.state.answerFeedback).toBeNull();
+		expect(shownColor(game.state.stimulus)).toBe(null);
 	});
 	test('nonwhite penalties are bounded, renewed at next appearance', function() {
 		const {game, advance} = fixture({}, () => 0.5); begin(game, advance); advance(375);

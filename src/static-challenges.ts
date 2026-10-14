@@ -1,4 +1,4 @@
-import {award, defineMode, difficulties, validateShared, type Config, type Difficulty, type Presentation, type RuntimeMode, type StaticConfig, type StaticModeId, type StaticPayload, type StaticStimulus, type Stimulus} from './mode';
+import {award, defineMode, difficulties, validateShared, type AnswerExplanation, type Config, type Difficulty, type Presentation, type RuntimeMode, type StaticConfig, type StaticModeId, type StaticPayload, type StaticStimulus, type Stimulus} from './mode';
 
 export const claimHoldMs: Readonly<Record<Difficulty, number>> = {
 	easy: 5_000, medium: 3_500, hard: 2_500, insane: 1_800,
@@ -12,6 +12,7 @@ interface StaticModeOptions {
 	readonly prompt: string;
 	readonly generate: (difficulty: Difficulty, random: () => number) => StaticPayload;
 	readonly isTrue: (payload: StaticPayload) => boolean;
+	readonly explain: (payload: StaticPayload, correct: boolean) => AnswerExplanation;
 }
 const payloadPresentation = function(payload: StaticPayload, prompt: string): Presentation {
 	if (payload.kind === 'symbols') return {kind: 'symbols', prompt, symbols: payload.symbols};
@@ -34,7 +35,7 @@ export const createStaticMode = function(options: StaticModeOptions): RuntimeMod
 		id: options.id, name: options.name, defaults: staticDefaults(options.id),
 		rules: [
 			options.prompt,
-			'First eligible correct press: +1 and an immediate fresh puzzle.',
+			'First eligible correct press: +1. The answer stays visible for 2 seconds before the next puzzle.',
 			'Wrong claim: −1 once per player.',
 			'Missing a claim costs nothing. Release before pressing again.',
 		],
@@ -53,6 +54,10 @@ export const createStaticMode = function(options: StaticModeOptions): RuntimeMod
 			if (state.blocked.includes(player)) return null;
 			if (state.showing === 'claim' && options.isTrue(state.payload)) return award(state, player, claim(time, state.id + 1, config, random));
 			return {stimulus: {...state, blocked: [...state.blocked, player]}, delta: -1, player, identity: state.id};
+		},
+		explain: function(state, delta) {
+			if (state.showing === 'gap') return {message: 'Wait for the next puzzle.'};
+			return options.explain(state.payload, delta > 0);
 		},
 		present: function(state) {
 			return state.showing === 'gap' ? {kind: 'blank', prompt: options.prompt} : payloadPresentation(state.payload, options.prompt);

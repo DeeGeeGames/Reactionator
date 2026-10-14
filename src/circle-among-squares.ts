@@ -156,7 +156,7 @@ export const circleAmongSquares = defineMode({
 	id: 'circle-among-squares', name: 'Circle among squares',
 	defaults: circleDefaults,
 	rules: [
-		'First eligible press while any part of a circle is visible in the moving field: +1.',
+		'First eligible press while any part of a circle is visible: +1. The visible circle stays highlighted for 2 seconds.',
 		'Squares only, a fully hidden circle, or a blank gap: −1. A blank false start also locks you out of the next circle.',
 		'If false or wrong presses lock out every player before anyone scores, discard the field and start a fresh run after a blank gap.',
 		'Missing a circle costs nothing. Release before pressing again.',
@@ -197,6 +197,25 @@ export const circleAmongSquares = defineMode({
 		const blocked = [...state.blocked, player];
 		const exhausted = players !== undefined && players.length > 0 && players.every(function(activePlayer) { return blocked.includes(activePlayer); });
 		return {stimulus: exhausted ? gap(time, state.id + 1, config, random) : {...state, blocked}, delta: -1, player, identity: state.id};
+	},
+	explain: function(state, delta) {
+		if (state.showing === 'gap') return {message: 'Wait for the circle field.'};
+		const circleVisible = state.circle !== null && circleIsVisible(state.circle, state.squares);
+		if (delta > 0 && circleVisible) return {message: 'The circle is visible between the squares.', highlightCircle: true};
+		if (!circleVisible && state.circle !== null) {
+			const coveredBy = state.squares.filter(function(square) {
+				const half = square.size / 2;
+				return state.circle !== null
+					&& state.circle.x >= square.x - half && state.circle.x <= square.x + half
+					&& state.circle.y >= square.y - half && state.circle.y <= square.y + half;
+			}).map(function(square) { return square.id; });
+			return {message: coveredBy.length > 1
+				? 'The circle is fully hidden behind the highlighted squares.'
+				: 'The circle is fully hidden behind a highlighted square.', highlightedShapes: coveredBy};
+		}
+		return circleVisible
+			? {message: 'Press only when part of the circle is visible.'}
+			: {message: 'No circle is visible yet. Wait for it to emerge.'};
 	},
 	present,
 });

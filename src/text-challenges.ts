@@ -25,6 +25,7 @@ const pick = function<T>(values: readonly T[], random: () => number): T {
 const integer = function(max: number, random: () => number): number {
 	return Math.floor(sample(random) * (max + 1));
 };
+const titleColor = function(color: WordColor): string { return `${color.slice(0, 1).toUpperCase()}${color.slice(1)}`; };
 export const generateColorWord = function(difficulty: Difficulty, random: () => number): ColorWordPayload {
 	const matching = sample(random) < 0.5;
 	const word = pick(wordColors, random);
@@ -96,8 +97,21 @@ export const isEquationTrue = function(payload: StaticPayload): boolean {
 export const colorWord = createStaticMode({
 	id: 'color-word', name: 'Color Word', prompt: 'Press if the word and the ink match.',
 	generate: generateColorWord, isTrue: isColorWordTrue,
+	explain: function(payload, correct) {
+		if (payload.kind !== 'color-word') return {message: 'This puzzle has no color word.'};
+		return correct
+			? {message: `The word ${titleColor(payload.word)} matches the ${payload.ink} ink.`}
+			: {message: `${titleColor(payload.word)} is printed in ${payload.ink} ink.`};
+	},
 });
 export const trueEquation = createStaticMode({
 	id: 'true-equation', name: 'True Equation', prompt: 'Press if the equation is true.',
 	generate: generateEquation, isTrue: isEquationTrue,
+	explain: function(payload, correct) {
+		if (payload.kind !== 'equation') return {message: 'This puzzle is not an equation.'};
+		const answer = equationValue(payload.operands, payload.operators);
+		return correct
+			? {message: `Both sides equal ${answer}.`}
+			: {message: `The correct answer is ${answer}, not ${payload.result}.`, correction: `Correct answer: ${answer}`};
+	},
 });
