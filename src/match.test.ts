@@ -59,8 +59,30 @@ describe('random mode cycles', function() {
 });
 
 describe('mixed matches', function() {
+	test('the default match reaches every new challenge before repeating a mode', function() {
+		let time = 0;
+		const game = new Game(function() { return time; }, function() { return 0.37; });
+		const played: string[] = [];
+		game.start();
+		for (let round = 0; round < game.match.modes.length; round += 1) {
+			ready(game);
+			time += game.config.countdownMs;
+			game.frame();
+			played.push(game.mode.id);
+			expect(game.state.stimulus?.mode).toBe(game.config.mode);
+			time += 500;
+			game.frame();
+			expect(game.state.stimulus?.mode).toBe(game.config.mode);
+			time += game.config.roundMs;
+			game.frame();
+		}
+		expect([...played].sort()).toEqual(game.match.modes.map(function(config) { return config.mode; }).sort());
+		expect(new Set(played).size).toBe(game.match.modes.length);
+	});
+
 	test('includes all playable registered defaults and defaults to ten rounds', function() {
-		expect(listPlayableModes().map(function(mode) { return mode.id; })).toEqual(['press-on-white', 'circle-among-squares']);
+		const modes = listPlayableModes();
+		expect(modes.map(function(mode) { return mode.id; }).sort()).toEqual(['press-on-white', 'circle-among-squares', 'color-word', 'true-equation', 'three-of-a-kind', 'five-different', 'matching-pair'].sort());
 		for (const config of [defaults, circleDefaults]) {
 			const selected = defaultConfigFor(config.mode);
 			expect(selected).toEqual(config);
@@ -70,10 +92,12 @@ describe('mixed matches', function() {
 		expect(() => registerMode({...requireMode('press-on-white'), id: 'catalog-only', defaults: circleDefaults})).toThrow('Mode does not match default configuration');
 		const game = new Game(function() { return 0; }, function() { return 0.99; });
 		expect(game.match.rounds).toBe(10);
-		expect(game.match.modes).toEqual([defaults, circleDefaults]);
+		expect(game.match.modes).toEqual(modes.map(function(mode) { return defaultConfigFor(mode.id); }));
 		game.start();
-		expect(game.mode.id).toBe('circle-among-squares');
-		expect(game.config).toEqual(circleDefaults);
+		const lastMode = modes.at(-1);
+		if (lastMode === undefined) throw new Error('Expected registered modes');
+		expect(game.mode.id).toBe(lastMode.id);
+		expect(game.config).toEqual(defaultConfigFor(lastMode.id));
 	});
 
 	test('rejects invalid match settings and copies caller configurations', function() {

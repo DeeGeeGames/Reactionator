@@ -50,8 +50,9 @@ const advanceUntilVisible = function(game: Game, advance: (ms: number) => void):
 };
 describe('circle among squares', function() {
 	test('registers beside Press on White with typed default configurations', function() {
-		expect(loadModes()).toEqual(['press-on-white', 'circle-among-squares']);
-		expect(listModes().map(function(mode) { return mode.id; })).toEqual(['press-on-white', 'circle-among-squares']);
+		expect(loadModes()).toContain('press-on-white');
+		expect(loadModes()).toContain('circle-among-squares');
+		expect(listModes().map(function(mode) { return mode.id; })).toEqual([...loadModes()]);
 		expect(() => registerMode(circleAmongSquares)).toThrow();
 		expect(() => requireMode('missing-mode')).toThrow();
 		expect(() => requireMode('press-on-white').validate(circleDefaults)).toThrow();

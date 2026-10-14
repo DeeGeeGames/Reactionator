@@ -1,9 +1,15 @@
 import {circleAmongSquares} from './circle-among-squares';
-import {listModes, requireMode, sample, type Config, type RuntimeMode} from './mode';
+import {threeOfAKind, fiveDifferent, matchingPair} from './symbol-challenges';
+import {colorWord, trueEquation} from './text-challenges';
+import {listModes, registerMode, requireMode, sample, type Config, type RuntimeMode} from './mode';
+
+for (const mode of [threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation]) registerMode(mode);
 
 export const loadModes = function(): readonly string[] {
 	const ids = listModes().map(function(mode) { return mode.id; });
-	if (!ids.includes(circleAmongSquares.id)) throw new Error('Circle among squares failed to register');
+	for (const mode of [circleAmongSquares, threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation]) {
+		if (!ids.includes(mode.id)) throw new Error(`${mode.name} failed to register`);
+	}
 	return ids;
 };
 
