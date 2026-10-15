@@ -1,6 +1,6 @@
 import './style.css';
 import {circleDefaults} from './circle-among-squares';
-import {Game, type Phase} from './game';
+import {Game, type GameState, type Phase} from './game';
 import {attachPlayerInput} from './input';
 import {difficulties, type Presentation} from './mode';
 import {defaultConfigFor, listPlayableModes} from './modes';
@@ -61,7 +61,7 @@ const eyebrow = make('p', 'eyebrow', 'ONE SCREEN · EVERYONE PLAYS');
 const title = make('h1', 'title', 'Reaction mix');
 const description = make('p', 'description');
 const rules = make('div', 'rules');
-for (const text of ['Every enabled game appears once before any repeat.', 'Correct press: +1. Wrong or blank press: −1.', 'A blank false start locks you out of the next target. Release before pressing again.']) rules.append(make('p', '', text));
+for (const text of ['Every enabled game appears once before any repeat.', 'Correct press: +1, with a 2-second answer reveal. Wrong or blank press: −1.', 'A blank false start locks you out of the next target. Release before pressing again.']) rules.append(make('p', '', text));
 const choices = make('div', 'choices');
 choices.setAttribute('role', 'group');
 choices.setAttribute('aria-label', 'Player count');
@@ -76,6 +76,7 @@ target.setAttribute('aria-hidden', 'true');
 boardSlot.append(target);
 const countdown = make('p', 'countdown');
 const nearPrompt = make('p', 'prompt');
+nearPrompt.setAttribute('aria-live', 'polite');
 const timing = make('p', 'timing');
 const scoreTable = make('div', 'results');
 const scoreRows = ([1, 2, 3, 4] as const).map(function(player) {
@@ -242,7 +243,9 @@ const render = function(): void {
 	table.dataset.inadequate = String(!adequateViewport());
 	const high = Math.max(...state.players.map(function(player) { return state.scores.total[player]; }));
 	const winners = state.players.filter(function(player) { return state.scores.total[player] === high; });
-	const presentation: Presentation = playing && state.stimulus !== null ? game.mode.present(state.stimulus) : {kind: 'blank', prompt: ''};
+	const answerFeedback = playing ? state.answerFeedback : null;
+	const presentation: Presentation = answerFeedback?.delta === 1 ? answerFeedback.presentation
+		: playing && state.stimulus !== null ? game.mode.present(state.stimulus) : {kind: 'blank', prompt: ''};
 	title.textContent = setup ? 'Reaction mix' : paused ? 'Paused'
 		: roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
@@ -252,8 +255,8 @@ const render = function(): void {
 				: matchResults ? `${game.match.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
 	show(eyebrow, setup); show(title, !playing); show(description, setup || paused || ready || counting || results);
 	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing && presentation.kind !== 'blank');
-	show(nearPrompt, playing && presentation.prompt !== '');
-	show(farPrompt, playing && presentation.prompt !== '');
+	show(nearPrompt, playing && (presentation.prompt !== '' || answerFeedback !== null));
+	show(farPrompt, playing && (presentation.prompt !== '' || answerFeedback !== null));
 	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
 	show(openSettings, setup && previewMatch === undefined);
@@ -265,10 +268,13 @@ const render = function(): void {
 	countdown.textContent = String(state.countdown);
 	timing.textContent = `ROUND ${state.round} / ${game.match.rounds} · ${(state.remaining / 1000).toFixed(1)}s`;
 	table.dataset.board = playing ? presentation.kind : '';
-	table.dataset.prompt = playing && presentation.prompt !== '' ? 'both' : '';
-	nearPrompt.textContent = presentation.prompt;
-	farPrompt.textContent = presentation.prompt;
-	paintBoard(playing ? presentation : {kind: 'blank', prompt: ''});
+	table.dataset.prompt = playing && (presentation.prompt !== '' || answerFeedback !== null) ? 'both' : '';
+	const promptText = answerFeedback?.message ?? presentation.prompt;
+	if (nearPrompt.textContent !== promptText) nearPrompt.textContent = promptText;
+	if (farPrompt.textContent !== promptText) farPrompt.textContent = promptText;
+	nearPrompt.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
+	farPrompt.dataset.result = nearPrompt.dataset.result;
+	paintBoard(playing ? presentation : {kind: 'blank', prompt: ''}, answerFeedback);
 	hint.textContent = !adequateViewport() ? 'Rotate or use a larger screen to play. Minimum 320 × 480 portrait or 560 × 320 landscape.'
 		: !settled ? 'Waiting for the layout to settle…' : !focused || document.hidden ? 'Return to this window to continue.'
 			: setup && state.players.length === 4 ? 'For four players, landscape gives everyone more room.' : '';
@@ -276,7 +282,7 @@ const render = function(): void {
 	for (const control of controls) {
 		const active = state.players.includes(control.player);
 		show(control.element, active && !setup);
-		control.element.setAttribute('aria-disabled', String(!layoutReady() || !(ready || playing || roundResults)));
+		control.element.setAttribute('aria-disabled', String(!layoutReady() || !(ready || (playing && answerFeedback?.delta !== 1) || roundResults)));
 		show(control.score, active && !setup);
 		control.score.textContent = String(state.scores.round[control.player]);
 		const side = control.player === 2 || control.player === 3 ? 'far' : 'near';
@@ -293,7 +299,7 @@ const render = function(): void {
 		row.round.textContent = `Round ${state.scores.round[row.player]}`;
 		row.total.textContent = `Total ${state.scores.total[row.player]}`;
 	}
-	show(farText, (!setup && !playing) || (playing && presentation.prompt !== ''));
+	show(farText, (!setup && !playing) || (playing && (presentation.prompt !== '' || answerFeedback !== null)));
 	show(farTitle, !playing);
 	farTitle.textContent = title.textContent;
 	farDescription.textContent = description.textContent;
@@ -334,15 +340,18 @@ document.addEventListener('visibilitychange', onVisibility);
 let frameId = 0;
 let fieldSceneId: number | null = null;
 const fieldElements = new Map<string, HTMLSpanElement>();
-const paintBoard = function(presentation: Presentation): void {
+const paintBoard = function(presentation: Presentation, answerFeedback: GameState['answerFeedback']): void {
 	if (presentation.kind === 'symbols' || presentation.kind === 'text') {
-		const key = presentation.kind === 'symbols' ? presentation.symbols.join(',') : `${presentation.text}:${presentation.ink ?? 'white'}`;
+		const content = presentation.kind === 'symbols' ? presentation.symbols.join(',') : `${presentation.text}:${presentation.ink ?? 'white'}`;
+		const highlights = answerFeedback?.highlightedSymbols?.join(',') ?? '';
+		const key = `${presentation.kind}:${content}:${answerFeedback?.delta ?? ''}:${highlights}:${answerFeedback?.correction ?? ''}`;
 		if (target.dataset.board === presentation.kind && target.dataset.content === key) return;
 		target.replaceChildren();
 		fieldElements.clear();
 		fieldSceneId = null;
 		target.dataset.board = presentation.kind;
 		target.dataset.color = 'blank';
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 		target.dataset.content = key;
 		if (presentation.kind === 'text') {
 			for (const side of ['far', 'near']) {
@@ -350,13 +359,15 @@ const paintBoard = function(presentation: Presentation): void {
 				copy.dataset.ink = presentation.ink ?? 'white';
 				target.append(copy);
 			}
+			if (answerFeedback?.correction !== undefined) target.append(make('span', 'answer-correction', answerFeedback.correction));
 			return;
 		}
 		target.style.setProperty('--symbol-columns', String(Math.ceil(presentation.symbols.length / 2)));
-		for (const shape of presentation.symbols) {
+		for (const [index, shape] of presentation.symbols.entries()) {
 			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 			svg.setAttribute('viewBox', '0 0 100 100');
 			svg.dataset.symbol = shape;
+			svg.dataset.highlighted = String(answerFeedback?.highlightedSymbols?.includes(index) ?? false);
 			const figure = document.createElementNS('http://www.w3.org/2000/svg', shape === 'circle' ? 'circle' : 'polygon');
 			if (shape === 'circle') {
 				figure.setAttribute('cx', '50'); figure.setAttribute('cy', '50'); figure.setAttribute('r', '37');
@@ -381,6 +392,7 @@ const paintBoard = function(presentation: Presentation): void {
 		}
 		target.dataset.board = 'field';
 		target.dataset.color = 'blank';
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 		const visibleIds = new Set(presentation.shapes.map(function(shape) { return shape.id; }));
 		for (const shape of presentation.shapes) {
 			let glyph = fieldElements.get(shape.id);
@@ -393,6 +405,9 @@ const paintBoard = function(presentation: Presentation): void {
 			if (glyph.dataset.color !== shape.color) glyph.dataset.color = shape.color;
 			const visible = shape.shape !== 'circle' || presentation.circleVisible;
 			if (glyph.dataset.visible !== String(visible)) glyph.dataset.visible = String(visible);
+			const highlighted = (shape.shape === 'circle' && answerFeedback?.highlightCircle === true)
+				|| (answerFeedback?.highlightedShapes?.includes(shape.id) ?? false);
+			if (glyph.dataset.highlighted !== String(highlighted)) glyph.dataset.highlighted = String(highlighted);
 			if (glyph.style.left !== `${shape.x * 100}%`) glyph.style.left = `${shape.x * 100}%`;
 			if (glyph.style.top !== `${shape.y * 100}%`) glyph.style.top = `${shape.y * 100}%`;
 			if (glyph.style.width !== `${shape.size * 100}%`) glyph.style.width = `${shape.size * 100}%`;
@@ -413,6 +428,7 @@ const paintBoard = function(presentation: Presentation): void {
 			target.dataset.board = 'swatch';
 			target.dataset.color = presentation.color;
 		}
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 		return;
 	}
 	if (target.dataset.board === 'blank' && target.children.length === 0 && fieldSceneId === null) return;
@@ -421,6 +437,7 @@ const paintBoard = function(presentation: Presentation): void {
 	fieldSceneId = null;
 	target.dataset.color = 'blank';
 	target.dataset.board = 'blank';
+	target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 };
 let cacheSuspended = false;
 const frame = function(): void {

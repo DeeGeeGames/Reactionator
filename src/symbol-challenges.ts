@@ -22,6 +22,16 @@ const shuffled = function<T>(values: readonly T[], random: () => number): readon
 const counts = function(symbols: readonly SymbolKind[]): readonly number[] {
 	return symbolKinds.map(function(kind) { return symbols.filter(function(symbol) { return symbol === kind; }).length; });
 };
+interface SymbolGroup { readonly kind: SymbolKind; readonly indices: readonly number[] }
+const groupsIn = function(symbols: readonly SymbolKind[]): readonly SymbolGroup[] {
+	return symbolKinds.map(function(kind) {
+		return {kind, indices: symbols.flatMap(function(symbol, index) { return symbol === kind ? [index] : []; })};
+	}).filter(function(group) { return group.indices.length > 0; });
+};
+const matchingGroup = function(symbols: readonly SymbolKind[], minimum: number): SymbolGroup | undefined {
+	return groupsIn(symbols).find(function(group) { return group.indices.length >= minimum; });
+};
+const highlightedPair = function(group: SymbolGroup): readonly number[] { return group.indices.slice(0, 2); };
 export const isThreeOfAKindTrue = function(payload: StaticPayload): boolean {
 	return payload.kind === 'symbols' && counts(payload.symbols).some(function(count) { return count >= 3; });
 };
@@ -67,12 +77,37 @@ export const generateMatchingPair = function(difficulty: Difficulty, random: () 
 export const threeOfAKind = createStaticMode({
 	id: 'three-of-a-kind', name: 'Three of a Kind', prompt: 'Press if three match.',
 	generate: generateThreeOfAKind, isTrue: isThreeOfAKindTrue,
+	explain: function(payload, correct) {
+		if (payload.kind !== 'symbols') return {message: 'This puzzle has no matching shapes.'};
+		const triple = matchingGroup(payload.symbols, 3);
+		if (correct && triple !== undefined) return {message: `Three ${triple.kind}s match.`, highlightedSymbols: triple.indices.slice(0, 3)};
+		const pair = groupsIn(payload.symbols).reduce(function(largest, group) {
+			return group.indices.length > largest.indices.length ? group : largest;
+		});
+		return pair.indices.length === 2
+			? {message: `Only two ${pair.kind}s match; three are needed.`, highlightedSymbols: pair.indices}
+			: {message: 'No shape appears three times.'};
+	},
 });
 export const fiveDifferent = createStaticMode({
 	id: 'five-different', name: 'Five Different', prompt: 'Press if all five differ.',
 	generate: generateFiveDifferent, isTrue: isFiveDifferentTrue,
+	explain: function(payload, correct) {
+		if (payload.kind !== 'symbols') return {message: 'This puzzle has no shapes to compare.'};
+		const duplicates = groupsIn(payload.symbols).filter(function(group) { return group.indices.length > 1; });
+		if (correct) return {message: 'All five shapes are different.', highlightedSymbols: [0, 1, 2, 3, 4]};
+		const group = duplicates[0];
+		return group === undefined ? {message: 'A shape repeats, so the five are not all different.'}
+			: {message: `${group.kind} repeats, so the five are not all different.`, highlightedSymbols: group.indices};
+	},
 });
 export const matchingPair = createStaticMode({
 	id: 'matching-pair', name: 'Matching Pair', prompt: 'Press if a pair is showing.',
 	generate: generateMatchingPair, isTrue: isMatchingPairTrue,
+	explain: function(payload, correct) {
+		if (payload.kind !== 'symbols') return {message: 'This puzzle has no matching shapes.'};
+		const pair = matchingGroup(payload.symbols, 2);
+		if (correct && pair !== undefined) return {message: `These two ${pair.kind}s match.`, highlightedSymbols: highlightedPair(pair)};
+		return {message: 'Every shape appears only once.'};
+	},
 });

@@ -89,6 +89,13 @@ export type Presentation =
 	| { readonly kind: 'symbols'; readonly prompt: string; readonly symbols: readonly SymbolKind[] }
 	| { readonly kind: 'text'; readonly prompt: string; readonly text: string; readonly ink?: WordColor }
 	| { readonly kind: 'blank'; readonly prompt: string };
+export interface AnswerExplanation {
+	readonly message: string;
+	readonly highlightedSymbols?: readonly number[];
+	readonly highlightedShapes?: readonly string[];
+	readonly highlightCircle?: boolean;
+	readonly correction?: string;
+}
 export interface NormalizedPress { readonly player: Player; readonly time: number; readonly players?: readonly Player[] }
 export interface Outcome {
 	readonly stimulus: Stimulus;
@@ -108,6 +115,7 @@ export interface ModeDefinition<TConfig extends Config, TStimulus extends Stimul
 	readonly advance: (state: TStimulus, time: number, config: TConfig, random: () => number) => TStimulus;
 	readonly press: (state: TStimulus, press: NormalizedPress, config: TConfig, random: () => number) => Outcome | null;
 	readonly present: (state: TStimulus) => Presentation;
+	readonly explain?: (state: TStimulus, delta: -1 | 1) => AnswerExplanation;
 }
 export interface RuntimeMode {
 	readonly id: string;
@@ -119,6 +127,7 @@ export interface RuntimeMode {
 	readonly advance: (state: Stimulus, time: number, config: Config, random: () => number) => Stimulus;
 	readonly press: (state: Stimulus, press: NormalizedPress, config: Config, random: () => number) => Outcome | null;
 	readonly present: (state: Stimulus) => Presentation;
+	readonly explain: (state: Stimulus, delta: -1 | 1) => AnswerExplanation;
 }
 const registry = new Map<string, RuntimeMode>();
 export const registerMode = function(mode: RuntimeMode): void {
@@ -151,6 +160,9 @@ export const defineMode = function<TConfig extends Config, TStimulus extends Sti
 		advance: function(state, time, config, random) { return mode.advance(stimulusOf(state), time, configOf(config), random); },
 		press: function(state, press, config, random) { return mode.press(stimulusOf(state), press, configOf(config), random); },
 		present: function(state) { return mode.present(stimulusOf(state)); },
+		explain: function(state, delta) {
+			return mode.explain?.(stimulusOf(state), delta) ?? {message: delta > 0 ? 'Correct!' : 'That is not correct.'};
+		},
 	};
 };
 const invalid = function(): never { throw new Error('Invalid game configuration'); };
@@ -202,7 +214,7 @@ const validatePress = function(config: PressOnWhiteConfig): PressOnWhiteConfig {
 export const pressOnWhite: ModeDefinition<PressOnWhiteConfig, PressOnWhiteStimulus> = {
 	id: 'press-on-white', name: 'Press on White',
 	defaults,
-	rules: ['First eligible press on white: +1.', 'Red, blue, green or blank: −1. A blank false start also locks you out of the next color.', 'After white disappears, pressing is wrong. Release before pressing again.'],
+	rules: ['First eligible press on white: +1. The white square stays highlighted for 2 seconds.', 'Red, blue, green or blank: −1. A blank false start also locks you out of the next color.', 'After white disappears, pressing is wrong. Release before pressing again.'],
 	isConfig: isPressConfig, isStimulus: isPressStimulus, validate: validatePress,
 	create: pressGap,
 	advance: function(state, time, config, random) {
@@ -223,6 +235,11 @@ export const pressOnWhite: ModeDefinition<PressOnWhiteConfig, PressOnWhiteStimul
 		if (state.blocked.includes(player)) return null;
 		if (state.color === 'white') return award(state, player, pressGap(time, state.id + 1, config, random));
 		return {stimulus: {...state, blocked: [...state.blocked, player]}, delta: -1, player, identity: state.id};
+	},
+	explain: function(state, delta) {
+		if (delta > 0) return {message: 'White is the correct color.'};
+		if (state.color === null) return {message: 'Wait for white to appear.'};
+		return {message: `${state.color.toUpperCase()} is not white.`};
 	},
 	present: function(state) { return {kind: 'swatch', color: state.color ?? 'blank', prompt: ''}; },
 };
