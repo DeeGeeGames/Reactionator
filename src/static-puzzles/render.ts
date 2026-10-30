@@ -17,18 +17,20 @@ const shape = function(parent: SVGElement, object: CountObject, x: number, y: nu
 	else if (object.shape === 'square') svg('rect', {...attrs, x: x - radius, y: y - radius, width: radius * 2, height: radius * 2}, parent);
 	else svg('polygon', {...attrs, points: `${x},${y - radius} ${x + radius},${y + radius} ${x - radius},${y + radius}`}, parent);
 };
-const fieldPosition = function(index: number, columns: number, rows: number, top = 15, height = 270): readonly [number, number, number] {
-	return [15 + (index % columns + 0.5) * 270 / columns, top + (Math.floor(index / columns) + 0.5) * height / rows, Math.min(270 / columns, height / rows) * 0.35];
+const fieldPosition = function(index: number, columns: number, rows: number, width = 480, height = 180): readonly [number, number, number] {
+	return [10 + (index % columns + 0.5) * (width - 20) / columns, 10 + (Math.floor(index / columns) + 0.5) * (height - 20) / rows, Math.min((width - 20) / columns, (height - 20) / rows) * 0.4];
 };
 export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation | null): SVGSVGElement {
 	const root = document.createElementNS(ns, 'svg');
-	root.setAttribute('viewBox', '0 0 300 300'); root.setAttribute('role', 'img'); root.setAttribute('aria-label', 'Reaction puzzle');
+	const field = puzzle.type === 'sad-face' || puzzle.type === 'shape-count' || puzzle.type === 'plus-and-minus';
+	const illusion = puzzle.type === 'equal-t' || puzzle.type === 'equal-arrows' || puzzle.type === 'equal-track-bars';
+	root.setAttribute('viewBox', field ? '0 0 480 180' : illusion ? '0 0 600 180' : '0 0 300 300'); root.setAttribute('role', 'img'); root.setAttribute('aria-label', 'Reaction puzzle');
 	const highlight = function(parent: SVGElement, index: number, x: number, y: number, radius: number): void {
 		if (feedback?.highlightedSymbols?.includes(index)) svg('rect', {x: x - radius, y: y - radius, width: radius * 2, height: radius * 2, rx: 4, fill: 'none', stroke: '#fff', 'stroke-width': 2}, parent);
 	};
 	if (puzzle.type === 'sad-face') {
 		for (const [index, face] of puzzle.faces.entries()) {
-			const [x, y, r] = fieldPosition(index, puzzle.columns, puzzle.faces.length / puzzle.columns);
+			const [x, y, r] = fieldPosition(index, Math.ceil(puzzle.faces.length / 3), 3);
 			const group = svg('g', {transform: `translate(${x} ${y}) rotate(${face.rotation})`, stroke: face.color, 'stroke-width': 2.5, fill: 'none'}, root);
 			svg('circle', {cx: 0, cy: 0, r}, group);
 			for (const eye of [-0.33, 0.33]) svg('circle', {cx: r * eye, cy: -r * 0.25, r: r * 0.065, fill: face.color}, group);
@@ -37,7 +39,7 @@ export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation
 		}
 	} else if (puzzle.type === 'shape-count' || puzzle.type === 'plus-and-minus') {
 		const count = puzzle.type === 'shape-count' ? puzzle.objects.length : puzzle.signs.length;
-		const columns = Math.ceil(Math.sqrt(count)); const rows = Math.ceil(count / columns);
+		const columns = Math.ceil(count / 3); const rows = Math.ceil(count / columns);
 		for (let index = 0; index < count; index++) {
 			const [x, y, r] = fieldPosition(index, columns, rows);
 			if (puzzle.type === 'shape-count') {
@@ -69,7 +71,7 @@ export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation
 	} else {
 		// Each edge sees an upright copy of the same numeric diagram, at one uniform scale.
 		for (const far of [false, true]) {
-			const group = svg('g', {transform: `${far ? 'rotate(180 150 150) ' : ''}translate(30 163) scale(0.8)`}, root);
+			const group = svg('g', {transform: `translate(${far ? 0 : 300} 10) ${far ? 'rotate(180 150 80)' : ''}`}, root);
 			if (puzzle.type === 'equal-t') {
 				line(group, 150 - puzzle.barLength / 2, 5, 150 + puzzle.barLength / 2, 5);
 				line(group, 150, 5, 150, 5 + puzzle.stemLength);
