@@ -1,0 +1,886 @@
+[
+	{
+		"id": "aut",
+		"name": "Austria",
+		"capital": "Vienna",
+		"region": "Europe",
+		"population": 9131761,
+		"landAreaKm2": 82520,
+		"familiar": true,
+		"capitalConfusions": [
+			"deu"
+		],
+		"flagConfusions": [
+			"bgr",
+			"est",
+			"deu",
+			"hun",
+			"ltu",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ed2939",
+				"#fff",
+				"#ed2939"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/AUT?format=json",
+			"population": "https://api.worldbank.org/v2/country/AUT/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/AUT/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "bel",
+		"name": "Belgium",
+		"capital": "Brussels",
+		"region": "Europe",
+		"population": 11779946,
+		"landAreaKm2": 30494,
+		"familiar": true,
+		"capitalConfusions": [
+			"fra"
+		],
+		"flagConfusions": [
+			"fra",
+			"irl",
+			"ita",
+			"rou",
+			"nga",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#000",
+				"#fdda24",
+				"#ef3340"
+			],
+			"ratio": 1.1538461538461537
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/BEL?format=json",
+			"population": "https://api.worldbank.org/v2/country/BEL/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/BEL/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "bgr",
+		"name": "Bulgaria",
+		"capital": "Sofia",
+		"region": "Europe",
+		"population": 6446596,
+		"landAreaKm2": 108560,
+		"familiar": false,
+		"capitalConfusions": [
+			"rou"
+		],
+		"flagConfusions": [
+			"aut",
+			"est",
+			"deu",
+			"hun",
+			"ltu",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#fff",
+				"#00966e",
+				"#d62612"
+			],
+			"ratio": 1.6666666666666667
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/BGR?format=json",
+			"population": "https://api.worldbank.org/v2/country/BGR/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/BGR/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "est",
+		"name": "Estonia",
+		"capital": "Tallinn",
+		"region": "Europe",
+		"population": 1370286,
+		"landAreaKm2": 42730,
+		"familiar": false,
+		"capitalConfusions": [
+			"lva",
+			"ltu"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"deu",
+			"hun",
+			"ltu",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#4891d9",
+				"#000",
+				"#fff"
+			],
+			"ratio": 1.5714285714285714
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/EST?format=json",
+			"population": "https://api.worldbank.org/v2/country/EST/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/EST/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "fra",
+		"name": "France",
+		"capital": "Paris",
+		"region": "Europe",
+		"population": 68372286,
+		"landAreaKm2": 538950,
+		"familiar": true,
+		"capitalConfusions": [
+			"ita",
+			"deu"
+		],
+		"flagConfusions": [
+			"bel",
+			"irl",
+			"ita",
+			"rou",
+			"nga",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#000091",
+				"#fff",
+				"#e1000f"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/FRA?format=json",
+			"population": "https://api.worldbank.org/v2/country/FRA/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/FRA/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "deu",
+		"name": "Germany",
+		"capital": "Berlin",
+		"region": "Europe",
+		"population": 83287273,
+		"landAreaKm2": 349430,
+		"familiar": true,
+		"capitalConfusions": [
+			"aut"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"hun",
+			"ltu",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#000",
+				"#dd0000",
+				"#ffce00"
+			],
+			"ratio": 1.6666666666666667
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/DEU?format=json",
+			"population": "https://api.worldbank.org/v2/country/DEU/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/DEU/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "hun",
+		"name": "Hungary",
+		"capital": "Budapest",
+		"region": "Europe",
+		"population": 9592186,
+		"landAreaKm2": 91260,
+		"familiar": false,
+		"capitalConfusions": [
+			"rou"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"deu",
+			"ltu",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ce2939",
+				"#fff",
+				"#477050"
+			],
+			"ratio": 2
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/HUN?format=json",
+			"population": "https://api.worldbank.org/v2/country/HUN/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/HUN/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "irl",
+		"name": "Ireland",
+		"capital": "Dublin",
+		"region": "Europe",
+		"population": 5311538,
+		"landAreaKm2": 68890,
+		"familiar": true,
+		"capitalConfusions": [
+			"ita"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"ita",
+			"rou",
+			"nga",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#169b62",
+				"#fff",
+				"#ff883e"
+			],
+			"ratio": 2
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/IRL?format=json",
+			"population": "https://api.worldbank.org/v2/country/IRL/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/IRL/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "ita",
+		"name": "Italy",
+		"capital": "Rome",
+		"region": "Europe",
+		"population": 58984216,
+		"landAreaKm2": 295720,
+		"familiar": true,
+		"capitalConfusions": [
+			"fra"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"rou",
+			"nga",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#009246",
+				"#fff",
+				"#ce2b37"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/ITA?format=json",
+			"population": "https://api.worldbank.org/v2/country/ITA/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/ITA/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "lva",
+		"name": "Latvia",
+		"capital": "Riga",
+		"region": "Europe",
+		"population": 1883710,
+		"landAreaKm2": 62230,
+		"familiar": false,
+		"capitalConfusions": [
+			"ltu",
+			"est"
+		],
+		"flagConfusions": [
+			"aut",
+			"hun"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#9e1b34",
+				"#9e1b34",
+				"#fff",
+				"#9e1b34",
+				"#9e1b34"
+			],
+			"ratio": 2
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/LVA?format=json",
+			"population": "https://api.worldbank.org/v2/country/LVA/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/LVA/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "ltu",
+		"name": "Lithuania",
+		"capital": "Vilnius",
+		"region": "Europe",
+		"population": 2871585,
+		"landAreaKm2": 62600,
+		"familiar": false,
+		"capitalConfusions": [
+			"lva",
+			"est"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"deu",
+			"hun",
+			"lux",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#fdb913",
+				"#006a44",
+				"#c1272d"
+			],
+			"ratio": 1.6666666666666667
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/LTU?format=json",
+			"population": "https://api.worldbank.org/v2/country/LTU/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/LTU/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "lux",
+		"name": "Luxembourg",
+		"capital": "Luxembourg",
+		"region": "Europe",
+		"population": 666430,
+		"landAreaKm2": 2574,
+		"familiar": false,
+		"capitalConfusions": [
+			"mco",
+			"bel"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"deu",
+			"hun",
+			"ltu",
+			"sle",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ed2939",
+				"#fff",
+				"#00a1de"
+			],
+			"ratio": 1.6666666666666667
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/LUX?format=json",
+			"population": "https://api.worldbank.org/v2/country/LUX/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/LUX/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "pol",
+		"name": "Poland",
+		"capital": "Warsaw",
+		"region": "Europe",
+		"population": 36687353,
+		"landAreaKm2": 306270,
+		"familiar": true,
+		"capitalConfusions": [
+			"ukr"
+		],
+		"flagConfusions": [
+			"ukr",
+			"idn",
+			"mco"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#fff",
+				"#dc143c"
+			],
+			"ratio": 1.6
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/POL?format=json",
+			"population": "https://api.worldbank.org/v2/country/POL/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/POL/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "rou",
+		"name": "Romania",
+		"capital": "Bucharest",
+		"region": "Europe",
+		"population": 19061062,
+		"landAreaKm2": 230080,
+		"familiar": false,
+		"capitalConfusions": [
+			"hun"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"ita",
+			"nga",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#002b7f",
+				"#fcd116",
+				"#ce1126"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/ROU?format=json",
+			"population": "https://api.worldbank.org/v2/country/ROU/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/ROU/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "ukr",
+		"name": "Ukraine",
+		"capital": "Kyiv",
+		"region": "Europe",
+		"population": 37732836,
+		"landAreaKm2": 579400,
+		"familiar": true,
+		"capitalConfusions": [
+			"pol"
+		],
+		"flagConfusions": [
+			"pol",
+			"idn",
+			"mco"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#0057b7",
+				"#ffd700"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/UKR?format=json",
+			"population": "https://api.worldbank.org/v2/country/UKR/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/UKR/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "idn",
+		"name": "Indonesia",
+		"capital": "Jakarta",
+		"region": "Asia",
+		"population": 281190067,
+		"landAreaKm2": 1892410,
+		"familiar": true,
+		"capitalConfusions": [
+			"nga"
+		],
+		"flagConfusions": [
+			"pol",
+			"ukr",
+			"mco"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ff0000",
+				"#fff"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/IDN?format=json",
+			"population": "https://api.worldbank.org/v2/country/IDN/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/IDN/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "mco",
+		"name": "Monaco",
+		"capital": "Monaco",
+		"region": "Europe",
+		"population": 38956,
+		"landAreaKm2": 2,
+		"familiar": false,
+		"capitalConfusions": [
+			"lux"
+		],
+		"flagConfusions": [
+			"pol",
+			"ukr",
+			"idn"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ce1126",
+				"#fff"
+			],
+			"ratio": 1.25
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/MCO?format=json",
+			"population": "https://api.worldbank.org/v2/country/MCO/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/MCO/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "nga",
+		"name": "Nigeria",
+		"capital": "Abuja",
+		"region": "Africa",
+		"population": 227882945,
+		"landAreaKm2": 910770,
+		"familiar": true,
+		"capitalConfusions": [
+			"mli"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"ita",
+			"rou",
+			"mli",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#008751",
+				"#fff",
+				"#008751"
+			],
+			"ratio": 2
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/NGA?format=json",
+			"population": "https://api.worldbank.org/v2/country/NGA/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/NGA/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "mli",
+		"name": "Mali",
+		"capital": "Bamako",
+		"region": "Africa",
+		"population": 23769127,
+		"landAreaKm2": 1220190,
+		"familiar": false,
+		"capitalConfusions": [
+			"gin"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"ita",
+			"rou",
+			"nga",
+			"gin",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#14b53a",
+				"#fcd116",
+				"#ce1126"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/MLI?format=json",
+			"population": "https://api.worldbank.org/v2/country/MLI/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/MLI/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "gin",
+		"name": "Guinea",
+		"capital": "Conakry",
+		"region": "Africa",
+		"population": 14405468,
+		"landAreaKm2": 245720,
+		"familiar": false,
+		"capitalConfusions": [
+			"mli"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"ita",
+			"rou",
+			"nga",
+			"mli",
+			"tcd"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#ce1126",
+				"#fcd116",
+				"#009460"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/GIN?format=json",
+			"population": "https://api.worldbank.org/v2/country/GIN/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/GIN/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "tcd",
+		"name": "Chad",
+		"capital": "N’Djamena",
+		"region": "Africa",
+		"population": 19319064,
+		"landAreaKm2": 1259200,
+		"familiar": false,
+		"capitalConfusions": [
+			"gin"
+		],
+		"flagConfusions": [
+			"bel",
+			"fra",
+			"irl",
+			"ita",
+			"rou",
+			"nga",
+			"mli",
+			"gin"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "vertical",
+			"colors": [
+				"#002664",
+				"#fecb00",
+				"#c60c30"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/TCD?format=json",
+			"population": "https://api.worldbank.org/v2/country/TCD/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/TCD/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "sle",
+		"name": "Sierra Leone",
+		"capital": "Freetown",
+		"region": "Africa",
+		"population": 8460512,
+		"landAreaKm2": 72180,
+		"familiar": false,
+		"capitalConfusions": [
+			"gin"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"deu",
+			"hun",
+			"ltu",
+			"lux",
+			"gab"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#1eb53a",
+				"#fff",
+				"#0072c6"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/SLE?format=json",
+			"population": "https://api.worldbank.org/v2/country/SLE/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/SLE/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "gab",
+		"name": "Gabon",
+		"capital": "Libreville",
+		"region": "Africa",
+		"population": 2484789,
+		"landAreaKm2": 257670,
+		"familiar": false,
+		"capitalConfusions": [
+			"mli"
+		],
+		"flagConfusions": [
+			"aut",
+			"bgr",
+			"est",
+			"deu",
+			"hun",
+			"ltu",
+			"lux",
+			"sle"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#009e60",
+				"#fcd116",
+				"#3a75c4"
+			],
+			"ratio": 1.3333333333333333
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/GAB?format=json",
+			"population": "https://api.worldbank.org/v2/country/GAB/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/GAB/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	},
+	{
+		"id": "mus",
+		"name": "Mauritius",
+		"capital": "Port Louis",
+		"region": "Africa",
+		"population": 1248647,
+		"landAreaKm2": 2000,
+		"familiar": false,
+		"capitalConfusions": [
+			"sle"
+		],
+		"flagConfusions": [
+			"aut",
+			"hun"
+		],
+		"flag": {
+			"kind": "bands",
+			"axis": "horizontal",
+			"colors": [
+				"#ea2839",
+				"#1a206d",
+				"#ffd500",
+				"#00a551"
+			],
+			"ratio": 1.5
+		},
+		"sources": {
+			"names": "https://api.worldbank.org/v2/country/MUS?format=json",
+			"population": "https://api.worldbank.org/v2/country/MUS/indicator/SP.POP.TOTL?date=2023&format=json",
+			"landAreaKm2": "https://api.worldbank.org/v2/country/MUS/indicator/AG.LND.TOTL.K2?date=2023&format=json",
+			"flag": "https://www.unvienna.org/protocol/uploads/res/generic-information_html/A-Z_Flags_external.pdf"
+		}
+	}
+]

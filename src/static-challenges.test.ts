@@ -1,3 +1,5 @@
+import {countryModes} from './country-challenges';
+import {figureModes} from './figure-challenges';
 import {describe, expect, test} from 'bun:test';
 import {Game} from './game';
 import {defaults, difficulties, requireMode, type Difficulty, type RuntimeMode, type StaticStimulus, type Stimulus} from './mode';
@@ -6,12 +8,12 @@ import {fiveDifferent, matchingPair, threeOfAKind} from './symbol-challenges';
 import {colorWord, trueEquation} from './text-challenges';
 
 const staticState = function(state: Stimulus | null): StaticStimulus {
-	if (state === null || state.mode === 'press-on-white' || state.mode === 'circle-among-squares') throw new Error('Expected static challenge');
+	if (state === null || state.mode === 'press-on-white' || state.mode === 'circle-among-squares' || 'plan' in state) throw new Error('Expected static challenge');
 	return state;
 };
 const staticModeId = function(mode: RuntimeMode) {
 	const id = mode.id;
-	if (id !== 'three-of-a-kind' && id !== 'five-different' && id !== 'matching-pair' && id !== 'color-word' && id !== 'true-equation') throw new Error('Expected static mode');
+	if (id !== 'matching-capital' && id !== 'matching-flag' && id !== 'larger-population' && id !== 'larger-land-area' && id !== 'animal-silhouette' && id !== 'flying-silhouette' && id !== 'made-by-people' && id !== 'panda-in-group' && id !== 'three-of-a-kind' && id !== 'five-different' && id !== 'matching-pair' && id !== 'color-word' && id !== 'true-equation') throw new Error('Expected static mode');
 	return id;
 };
 const fixture = function(mode: RuntimeMode, difficulty: Difficulty, random: () => number) {
@@ -22,7 +24,7 @@ const fixture = function(mode: RuntimeMode, difficulty: Difficulty, random: () =
 	game.select(2); game.start(); game.press(1); game.press(2); advance(config.countdownMs);
 	return {game, config, advance};
 };
-const testedModes = [threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation];
+const testedModes = [...countryModes, ...figureModes, threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation];
 describe('shared static challenge lifecycle', function() {
 	for (const mode of testedModes) {
 		for (const difficulty of difficulties) {
