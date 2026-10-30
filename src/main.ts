@@ -1,4 +1,5 @@
 import {renderPathTime} from './path-time-renderer';
+import {paintFamilyBoard} from './family-renderer';
 import './style.css';
 import {circleDefaults} from './circle-among-squares';
 import {Game, type GameState, type Phase} from './game';
@@ -394,6 +395,12 @@ let frameId = 0;
 let fieldSceneId: number | null = null;
 const fieldElements = new Map<string, HTMLSpanElement>();
 const paintBoard = function(presentation: Presentation, answerFeedback: GameState['answerFeedback']): void {
+	if (presentation.kind === 'country' || presentation.kind === 'figures') {
+		fieldElements.clear(); fieldSceneId = null;
+		paintFamilyBoard(target, presentation);
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
+		return;
+	}
 	if (presentation.kind === 'symbols' || presentation.kind === 'text') {
 		const content = presentation.kind === 'symbols' ? presentation.symbols.join(',') : `${presentation.text}:${presentation.ink ?? 'white'}`;
 		const highlights = answerFeedback?.highlightedSymbols?.join(',') ?? '';

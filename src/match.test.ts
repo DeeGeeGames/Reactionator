@@ -82,7 +82,7 @@ describe('mixed matches', function() {
 
 	test('includes all playable registered defaults and defaults to ten rounds', function() {
 		const modes = listPlayableModes();
-		expect(modes.map(function(mode) { return mode.id; }).sort()).toEqual(['press-on-white', 'circle-among-squares', 'color-word', 'true-equation', 'three-of-a-kind', 'five-different', 'matching-pair', 'mouse-to-cheese', 'countdown-to-zero', 'colliding-shapes', 'corner-to-corner'].sort());
+		expect(modes.map(function(mode) { return mode.id; }).sort()).toEqual(['press-on-white', 'circle-among-squares', 'color-word', 'true-equation', 'three-of-a-kind', 'five-different', 'matching-pair', 'mouse-to-cheese', 'countdown-to-zero', 'colliding-shapes', 'corner-to-corner', 'matching-capital', 'matching-flag', 'larger-population', 'larger-land-area', 'animal-silhouette', 'flying-silhouette', 'made-by-people', 'panda-in-group'].sort());
 		for (const config of [defaults, circleDefaults]) {
 			const selected = defaultConfigFor(config.mode);
 			expect(selected).toEqual(config);

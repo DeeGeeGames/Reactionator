@@ -15,6 +15,8 @@ interface StaticModeOptions {
 	readonly explain: (payload: StaticPayload, correct: boolean) => AnswerExplanation;
 }
 const payloadPresentation = function(payload: StaticPayload, prompt: string): Presentation {
+	if (payload.kind === 'country') return {kind: 'country', prompt, payload};
+	if (payload.kind === 'figures') return {kind: 'figures', prompt, payload};
 	if (payload.kind === 'symbols') return {kind: 'symbols', prompt, symbols: payload.symbols};
 	if (payload.kind === 'color-word') return {kind: 'text', prompt, text: payload.word.toUpperCase(), ink: payload.ink};
 	const first = payload.operands[0];

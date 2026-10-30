@@ -1,14 +1,16 @@
 import {pathTimeModes} from './temporal-challenges';
+import {countryModes} from './country-challenges';
+import {figureModes} from './figure-challenges';
 import {circleAmongSquares} from './circle-among-squares';
 import {threeOfAKind, fiveDifferent, matchingPair} from './symbol-challenges';
 import {colorWord, trueEquation} from './text-challenges';
 import {listModes, registerMode, requireMode, sample, type Config, type RuntimeMode} from './mode';
 
-for (const mode of [threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation, ...pathTimeModes]) registerMode(mode);
+for (const mode of [threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation, ...pathTimeModes, ...countryModes, ...figureModes]) registerMode(mode);
 
 export const loadModes = function(): readonly string[] {
 	const ids = listModes().map(function(mode) { return mode.id; });
-	for (const mode of [circleAmongSquares, threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation, ...pathTimeModes]) {
+	for (const mode of [circleAmongSquares, threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation, ...pathTimeModes, ...countryModes, ...figureModes]) {
 		if (!ids.includes(mode.id)) throw new Error(`${mode.name} failed to register`);
 	}
 	return ids;
