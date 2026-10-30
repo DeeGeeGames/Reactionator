@@ -1,3 +1,4 @@
+import {SVGPathData} from 'svg-pathdata';
 import type {Figure, VectorPart} from './figure-types';
 const path = function(d: string, fill: 'dark' | 'light' = 'dark'): VectorPart { return {kind: 'path', d, fill}; };
 const ellipse = function(cx: number, cy: number, rx: number, ry: number, fill: 'dark' | 'light' = 'dark'): VectorPart { return {kind: 'ellipse', cx, cy, rx, ry, fill}; };
@@ -35,7 +36,8 @@ export const validateFigures = function(catalog: readonly Figure[]): void {
 		for (const part of entry.drawing) {
 			if (part.fill !== 'dark' && part.fill !== 'light') throw new Error('Invalid vector tone');
 			if (part.kind === 'path') {
-				if (!/^[MLQZCHVSTAmlqzchvsta0-9.,\s-]+$/.test(part.d)) throw new Error('Invalid vector path');
+				const commands = SVGPathData.parse(part.d);
+				if (commands[0]?.type !== SVGPathData.MOVE_TO || !commands.some(function(command) { return (command.type & SVGPathData.DRAWING_COMMANDS) !== 0; })) throw new Error('Invalid vector path');
 			} else if (![part.cx, part.cy, part.rx, part.ry].every(Number.isFinite) || part.rx <= 0 || part.ry <= 0
 				|| part.cx - part.rx < 0 || part.cx + part.rx > 100 || part.cy - part.ry < 0 || part.cy + part.ry > 100) throw new Error('Invalid ellipse');
 		}

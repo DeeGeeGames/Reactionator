@@ -23,7 +23,7 @@ const drawGraph = function(svg: SVGSVGElement, graph: PathGraph, tokens: 'mouse-
 		const c = edge.curve;
 		const d = `M${from.x} ${from.y} ` + (c === undefined ? `L${to.x} ${to.y}` : `C${c[0].x} ${c[0].y} ${c[1].x} ${c[1].y} ${to.x} ${to.y}`);
 		// Explicit nonjoining crossings: dark undercut and bright overpass.
-		svg.append(element('path', {d, fill: 'none', stroke: '#101725', 'stroke-width': tokens === 'mouse-cheese' ? 2.8 : 3, 'stroke-linecap': 'round'}), element('path', {d, fill: 'none', stroke: '#ecf0f8', 'stroke-width': tokens === 'mouse-cheese' ? 0.9 : 1.7, 'stroke-linecap': 'round'}));
+		svg.append(element('path', {d, fill: 'none', stroke: '#101725', 'stroke-width': tokens === 'mouse-cheese' ? 3.8 : 3.5, 'stroke-linecap': 'round'}), element('path', {d, fill: 'none', stroke: '#ecf0f8', 'stroke-width': tokens === 'mouse-cheese' ? 1.2 : 1.7, 'stroke-linecap': 'round'}));
 	}
 	for (const node of graph.nodes) svg.append(element('circle', {cx: node.x, cy: node.y, r: tokens === 'mouse-cheese' ? 0.8 : 1.2, fill: '#ecf0f8'}));
 	for (const [id, goal] of [[graph.start, false], [graph.goal, true]] as const) {
@@ -34,8 +34,8 @@ const drawGraph = function(svg: SVGSVGElement, graph: PathGraph, tokens: 'mouse-
 			token(svg, {...point, x: point.x + (goal ? 5 : -5)}, goal);
 		}
 		else {
-			svg.append(element('circle', {cx: point.x, cy: point.y, r: 4, fill: '#4aaaff', stroke: '#101725', 'stroke-width': 0.7}));
-			const label = element('text', {x: point.x, y: point.y + 1.7, 'font-size': 5, 'text-anchor': 'middle', fill: '#101725', 'font-weight': 900});
+			svg.append(element('circle', {cx: point.x, cy: point.y, r: 5, fill: '#4aaaff', stroke: '#101725', 'stroke-width': 0.7}));
+			const label = element('text', {x: point.x, y: point.y + 2.5, 'font-size': 7, 'text-anchor': 'middle', fill: '#101725', 'font-weight': 900});
 			label.textContent = goal ? 'G' : 'S'; svg.append(label);
 		}
 	}

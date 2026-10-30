@@ -92,7 +92,7 @@ export const mouseGraph = function(difficulty: Difficulty, random: () => number)
 	// A visible smooth loop and two dead-end branches, present for both truths.
 	const anchor = nodes.find(function(node) { return node.id === '1:0'; });
 	if (anchor === undefined) throw new Error('Missing junction');
-	nodes.push({id: 'loop', x: anchor.x + 2, y: 5}, {id: 'dead', x: anchor.x - 7, y: 6});
+	nodes.push({id: 'loop', x: anchor.x + 2, y: 5}, {id: 'dead', x: anchor.x - 7, y: 1});
 	edges.push({from: anchor.id, to: 'loop', curve: [{x: anchor.x + 13, y: 17}, {x: anchor.x + 12, y: 2}]}, {from: 'loop', to: anchor.id, curve: [{x: anchor.x - 10, y: 2}, {x: anchor.x - 12, y: 13}]}, {from: 'loop', to: 'dead'});
 	return {nodes, edges, start, goal: `${stages}:${goalLane}`, crossing: 'bridge'};
 };

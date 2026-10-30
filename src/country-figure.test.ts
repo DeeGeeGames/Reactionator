@@ -70,3 +70,11 @@ test('panda can occupy every cell; multiple targets count and ordinary bear does
 	for (const animals of [[panda,panda], [bear,bear]]) expect(figureClaimTrue({kind: 'figures', question: 'panda-in-group', columns: 2, rows: 1, figures: animals})).toBe(animals[0]?.id === 'panda');
 });
 test('all eight selectable modes have typed defaults', function() { expect([...countryModes, ...figureModes].length).toBe(8); });
+
+test('figure validation rejects incomplete SVG commands', function() {
+	const entry = figures[0];
+	if (entry === undefined) throw new Error('Missing figure');
+	for (const d of ['M', 'M 20 20 L', 'M 20 20 Q 3', 'L 10 10', '', 'M 20 20']) {
+		expect(function() { validateFigures([{...entry, drawing: [{kind: 'path', d, fill: 'dark'}]}]); }).toThrow();
+	}
+});

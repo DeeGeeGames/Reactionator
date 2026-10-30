@@ -127,3 +127,25 @@ describe('path and temporal modes', function() {
 		const late = mode.advance(first, first.plan.centerAt + 700, config, seeded(1)); expect(mode.press(late, {player: 1, time: first.plan.centerAt + 700}, config, seeded(1))?.delta).toBe(-1);
 	});
 });
+
+test('mouse dead-end marker stays clear of unrelated rendered curves', function() {
+	for (const difficulty of difficulties) for (const value of [0.1, 0.9]) {
+		const graph = mouseGraph(difficulty, function() { return value; });
+		const dead = graph.nodes.find(function(node) { return node.id === 'dead'; });
+		if (dead === undefined) throw new Error('Missing dead end');
+		for (const edge of graph.edges) {
+			if (edge.from === dead.id || edge.to === dead.id) continue;
+			const from = graph.nodes.find(function(node) { return node.id === edge.from; });
+			const to = graph.nodes.find(function(node) { return node.id === edge.to; });
+			if (from === undefined || to === undefined) throw new Error('Missing endpoint');
+			for (let i = 0; i <= 1000; i++) {
+				const t = i / 1000; const u = 1 - t;
+				const [x, y] = edge.curve === undefined ? [from.x * u + to.x * t, from.y * u + to.y * t]
+					: [u ** 3 * from.x + 3 * u ** 2 * t * edge.curve[0].x + 3 * u * t ** 2 * edge.curve[1].x + t ** 3 * to.x,
+						u ** 3 * from.y + 3 * u ** 2 * t * edge.curve[0].y + 3 * u * t ** 2 * edge.curve[1].y + t ** 3 * to.y];
+				// 0.8-radius marker + 0.6 half-stroke + visible clearance.
+				expect(Math.hypot(dead.x - x, dead.y - y)).toBeGreaterThan(2.4);
+			}
+		}
+	}
+});

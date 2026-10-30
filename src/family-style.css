@@ -15,4 +15,11 @@
 .table[data-phase='playing'] .target[data-board='figures'] { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; }
 @media (orientation: landscape) {
 	.table[data-phase='playing'][data-board='country'] .center, .table[data-phase='playing'][data-board='figures'] .center { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); gap: 4px; }
+	.table[data-phase='playing'] .target[data-board='country'] { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+	.table[data-phase='playing'][data-board='figures'] .center { grid-template-columns: minmax(0, .7fr) minmax(0, 3fr) minmax(0, .7fr); }
+}
+@media (max-height: 400px) and (orientation: landscape) {
+	.table[data-phase='playing'][data-board='figures'], .table[data-phase='playing'][data-board='path-time'] { --pad-height: 80px; }
+	.table[data-phase='playing']:is([data-board='figures'], [data-board='path-time']) .player-control { padding: 5px; }
+	.table[data-phase='playing']:is([data-board='figures'], [data-board='path-time']) .control-content { gap: 1px; line-height: 1.1; }
 }
