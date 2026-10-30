@@ -156,6 +156,7 @@ export const circleAmongSquares = defineMode({
 	id: 'circle-among-squares', name: 'Circle among squares',
 	defaults: circleDefaults,
 	rules: [
+		circlePrompt,
 		'First eligible press while any part of a circle is visible: +1. The visible circle stays highlighted for 2 seconds.',
 		'Squares only, a fully hidden circle, or a blank gap: −1. A blank false start also locks you out of the next circle.',
 		'If false or wrong presses lock out every player before anyone scores, discard the field and start a fresh run after a blank gap.',

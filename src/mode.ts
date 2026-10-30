@@ -214,7 +214,7 @@ const validatePress = function(config: PressOnWhiteConfig): PressOnWhiteConfig {
 export const pressOnWhite: ModeDefinition<PressOnWhiteConfig, PressOnWhiteStimulus> = {
 	id: 'press-on-white', name: 'Press on White',
 	defaults,
-	rules: ['First eligible press on white: +1. The white square stays highlighted for 2 seconds.', 'Red, blue, green or blank: −1. A blank false start also locks you out of the next color.', 'After white disappears, pressing is wrong. Release before pressing again.'],
+	rules: ['Press when the square is white.', 'First eligible press on white: +1. The white square stays highlighted for 2 seconds.', 'Red, blue, green or blank: −1. A blank false start also locks you out of the next color.', 'After white disappears, pressing is wrong. Release before pressing again.'],
 	isConfig: isPressConfig, isStimulus: isPressStimulus, validate: validatePress,
 	create: pressGap,
 	advance: function(state, time, config, random) {

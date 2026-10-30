@@ -57,19 +57,34 @@ const button = function(text: string, action: () => void): HTMLButtonElement {
 const table = make('main', 'table');
 const center = make('section', 'center');
 center.setAttribute('aria-label', 'Match status');
-const eyebrow = make('p', 'eyebrow', 'ONE SCREEN · EVERYONE PLAYS');
+const brand = make('div', 'brand-mark');
+brand.setAttribute('aria-hidden', 'true');
+for (const player of [3, 2, 4, 1]) brand.append(make('span', `player-${player}`));
+const eyebrow = make('p', 'eyebrow', 'ONE SCREEN. FAST HANDS.');
 const title = make('h1', 'title', 'Reaction mix');
 const description = make('p', 'description');
-const rules = make('div', 'rules');
-for (const text of ['Every enabled game appears once before any repeat.', 'Correct press: +1, with a 2-second answer reveal. Wrong or blank press: −1.', 'A blank false start locks you out of the next target. Release before pressing again.']) rules.append(make('p', '', text));
+const matchSummary = make('p', 'match-summary');
+const rules = make('details', 'rules');
+rules.append(make('summary', '', 'How to play'));
+for (const text of ['Sit around the screen. Everyone taps their own pad to get ready.', 'Watch the middle. Be first to press when the answer is right: +1. A wrong press costs 1 point.', 'Release between presses. A press during a blank locks you out of the next target. Correct answers pause for a 2-second reveal.', 'Scores add up across rounds. The highest total wins.']) rules.append(make('p', '', text));
+const playerLabel = make('p', 'field-label', 'How many players?');
 const choices = make('div', 'choices');
 choices.setAttribute('role', 'group');
 choices.setAttribute('aria-label', 'Player count');
 const playerChoices = [2, 3, 4].map(function(count) {
-	const choice = button(`${count} players`, function() { game.select(count); render(); });
+	const choice = button(String(count), function() { game.select(count); render(); });
+	choice.setAttribute('aria-label', `${count} players`);
 	choices.append(choice);
 	return {count, choice};
 });
+const seating = make('div', 'seating');
+seating.setAttribute('role', 'img');
+const seatingMap = make('div', 'seating-map');
+seatingMap.setAttribute('aria-hidden', 'true');
+for (const player of [3, 2, 4, 1]) seatingMap.append(make('span', `seat player-${player}`, `P${player}`));
+seatingMap.append(make('span', 'seat-center', 'WATCH HERE'));
+const seatingCaption = make('p', 'seating-caption', 'Pick a pad. Gather around.');
+seating.append(seatingMap, seatingCaption);
 const boardSlot = make('div', 'board-slot');
 const target = make('div', 'target');
 target.setAttribute('aria-hidden', 'true');
@@ -78,6 +93,8 @@ const countdown = make('p', 'countdown');
 const nearPrompt = make('p', 'prompt');
 nearPrompt.setAttribute('aria-live', 'polite');
 const timing = make('p', 'timing');
+const readyStatus = make('p', 'ready-status');
+readyStatus.setAttribute('role', 'status');
 const scoreTable = make('div', 'results');
 const scoreRows = ([1, 2, 3, 4] as const).map(function(player) {
 	const row = make('div', `result player-${player}`);
@@ -89,27 +106,33 @@ const scoreRows = ([1, 2, 3, 4] as const).map(function(player) {
 	return {player, row, round, total};
 });
 const actions = make('div', 'actions');
-const start = button('Start match', function() { if (layoutReady()) { game.start(); render(); } });
-const openSettings = button('Settings', function() {
+const start = button('Play', function() { if (layoutReady()) { game.start(); render(); } });
+start.classList.add('primary');
+const openSettings = button('Choose games', function() {
 	if (game.state.phase !== 'setup') return;
 	settingsOpen = true;
 	render();
 	settingsTitle.focus();
 });
+openSettings.classList.add('secondary');
 const resume = button('Resume', function() { if (layoutReady()) { game.resume(); render(); } });
 const rematch = button('Rematch', function() { if (layoutReady()) { game.rematch(); render(); } });
 const end = button('Change setup', function() { game.end(); render(); });
+resume.classList.add('primary');
+rematch.classList.add('primary');
+end.classList.add('secondary');
 actions.append(start, openSettings, resume, rematch, end);
 const settings = make('section', 'settings');
 settings.setAttribute('aria-labelledby', 'settings-title');
-const settingsTitle = make('h1', 'title', 'Settings');
+const settingsTitle = make('h1', 'title', 'Game mix');
 settingsTitle.id = 'settings-title';
 settingsTitle.tabIndex = -1;
-const settingsDescription = make('p', 'description', 'Choose the game types in the rotation. Keep at least one enabled.');
+const settingsDescription = make('p', 'description', 'Choose what comes up. Every selected game appears before any repeat.');
+const settingsCount = make('p', 'field-label');
 const settingsList = make('div', 'settings-list');
 settingsList.setAttribute('role', 'group');
 settingsList.setAttribute('aria-label', 'Game types');
-const modeChoices = listPlayableModes().map(function(mode) {
+const modeChoices = listPlayableModes().map(function(mode, index) {
 	const choice = button(mode.name, function() {
 		if (!settingsOpen || game.state.phase !== 'setup') return;
 		const enabled = enabledModes.includes(mode.id);
@@ -127,27 +150,34 @@ const modeChoices = listPlayableModes().map(function(mode) {
 	choice.className = 'action mode-choice';
 	choice.setAttribute('role', 'checkbox');
 	choice.setAttribute('aria-label', mode.name);
+	choice.setAttribute('aria-describedby', `mode-rule-${mode.id} settings-notice`);
 	const label = make('span', '');
-	label.append(make('strong', '', mode.name), make('span', 'mode-rule', mode.rules[0] ?? ''));
+	const rule = make('span', 'mode-rule', mode.rules[0] ?? '');
+	rule.id = `mode-rule-${mode.id}`;
+	label.append(make('strong', '', mode.name), rule);
 	const status = make('span', 'mode-status');
 	status.setAttribute('aria-hidden', 'true');
-	choice.replaceChildren(label, status);
+	const number = make('span', 'mode-number', String(index + 1).padStart(2, '0'));
+	number.setAttribute('aria-hidden', 'true');
+	choice.replaceChildren(number, label, status);
 	settingsList.append(choice);
 	return {id: mode.id, choice, status};
 });
 const settingsNotice = make('p', 'hint');
 settingsNotice.setAttribute('role', 'status');
+settingsNotice.id = 'settings-notice';
 const settingsActions = make('div', 'actions');
-const closeSettings = button('Back to setup', function() {
+const closeSettings = button('Done', function() {
 	settingsOpen = false;
 	render();
 	openSettings.focus();
 });
+closeSettings.classList.add('primary');
 settingsActions.append(closeSettings);
-settings.append(settingsTitle, settingsDescription, settingsList, settingsNotice, settingsActions);
+settings.append(settingsTitle, settingsDescription, settingsCount, settingsList, settingsNotice, settingsActions);
 const hint = make('p', 'hint');
 const nearText = make('div', 'status-copy near-text');
-nearText.append(eyebrow, title, description, rules, choices, countdown, nearPrompt, timing, scoreTable);
+nearText.append(brand, eyebrow, title, description, matchSummary, playerLabel, choices, countdown, nearPrompt, timing, readyStatus, scoreTable);
 const farText = make('div', 'status-copy far-text');
 // The far copy is visual repetition; assistive technology reads the near copy once.
 farText.setAttribute('aria-hidden', 'true');
@@ -156,6 +186,7 @@ const farDescription = make('p', 'description');
 const farCountdown = make('p', 'countdown');
 const farPrompt = make('p', 'prompt');
 const farTiming = make('p', 'timing');
+const farReadyStatus = make('p', 'ready-status');
 const farScores = make('div', 'results');
 const farScoreRows = scoreRows.map(function({player}) {
 	const row = make('div', `result player-${player}`);
@@ -166,10 +197,11 @@ const farScoreRows = scoreRows.map(function({player}) {
 	farScores.append(row);
 	return {player, row, round, total};
 });
-farText.append(farTitle, farDescription, farCountdown, farPrompt, farTiming, farScores);
-center.append(farText, nearText, boardSlot, actions, hint);
+farText.append(farTitle, farDescription, farCountdown, farPrompt, farTiming, farReadyStatus, farScores);
+center.append(farText, nearText, seating, boardSlot, actions, hint);
 const toolbar = make('div', 'toolbar');
 const pause = button('Pause', function() { interrupt('Match paused.'); });
+pause.setAttribute('aria-label', 'Pause match');
 const fullscreen = button('Fullscreen', function() {
 	if (document.fullscreenElement !== null) void document.exitFullscreen().catch(function() {});
 	else void table.requestFullscreen().catch(function() { hint.textContent = 'Fullscreen is unavailable. You can keep playing here.'; });
@@ -182,17 +214,22 @@ const controls = ([1, 2, 3, 4] as const).map(function(player) {
 	element.setAttribute('aria-label', `Player ${player} control`);
 	const contents = make('span', 'control-content');
 	const identity = make('span', 'identity', `Player ${player}`);
-	const score = make('strong', `score player-${player}`, '0');
-	score.setAttribute('aria-label', `Player ${player} round score`);
-	table.append(score);
+	const score = make('strong', 'score', '0');
+	score.id = `player-${player}-score`;
+	const scoreLabel = make('span', 'score-label', 'TOTAL');
+	const scoreGroup = make('span', 'pad-score');
+	scoreGroup.append(score, scoreLabel);
+	const roundScore = make('span', 'round-score');
 	const status = make('span', 'control-status');
+	status.id = `player-${player}-status`;
+	element.setAttribute('aria-describedby', `${score.id} ${status.id}`);
 	const feedback = make('span', 'feedback');
-	contents.append(identity, status, feedback);
+	contents.append(identity, scoreGroup, status, roundScore, feedback);
 	element.append(contents);
 	table.append(element);
-	return {player, element, score, status, feedback};
+	return {player, element, score, roundScore, status, feedback};
 });
-center.append(toolbar);
+center.append(toolbar, rules);
 table.append(center, settings);
 app.append(table);
 let disposed = false;
@@ -230,7 +267,9 @@ const render = function(): void {
 		choice.setAttribute('aria-disabled', String(enabled && enabledModes.length === 1));
 		status.textContent = enabled ? 'On' : 'Off';
 	}
-	settingsNotice.textContent = `${enabledModes.length} of ${modeChoices.length} enabled. ${storageUnavailable ? 'Changes apply here, but could not be saved in this browser.' : 'Changes save automatically in this browser.'}`;
+	settingsCount.textContent = `${enabledModes.length} OF ${modeChoices.length} SELECTED`;
+	const noticeText = `${enabledModes.length === 1 ? 'Keep at least one game selected. ' : ''}${storageUnavailable ? 'Changes apply here, but could not be saved in this browser.' : 'Your game mix saves automatically on this device.'}`;
+	if (settingsNotice.textContent !== noticeText) settingsNotice.textContent = noticeText;
 	const ready = state.phase === 'ready';
 	const playing = state.phase === 'playing';
 	const counting = state.phase === 'countdown';
@@ -249,15 +288,23 @@ const render = function(): void {
 	title.textContent = setup ? 'Reaction mix' : paused ? 'Paused'
 		: roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
-	description.textContent = setup ? `${game.match.rounds} random rounds · ${game.match.modes.length} game ${game.match.modes.length === 1 ? 'type' : 'types'}. Choose 2–4 players.` : paused ? state.pauseReason
-		: ready || counting ? `${game.mode.rules[0] ?? ''}${ready ? ' Each player: press your control when ready.' : ''}`
-			: roundResults ? 'Everyone press your control when ready for the next round.'
+	description.textContent = setup ? 'A battle of reflexes for 2–4 people.' : paused ? state.pauseReason
+		: ready || counting ? game.mode.rules[0] ?? ''
+			: roundResults ? 'Tap your pad for the next round.'
 				: matchResults ? `${game.match.rounds} rounds played. ${winners.length > 1 ? 'Shared victory.' : 'Match complete.'}` : '';
+	matchSummary.textContent = `${game.match.rounds} rounds · ${game.match.modes.length} ${game.match.modes.length === 1 ? 'game' : 'games'}`;
+	openSettings.textContent = `Choose games · ${enabledModes.length}`;
+	seating.setAttribute('aria-label', state.players.length === 2 ? 'Seating: Player 2 at the top, Player 1 at the bottom.' : state.players.length === 3 ? 'Seating: Player 3 at top left, Player 2 at top right, Player 1 at the bottom.' : 'Seating: Player 3 at top left, Player 2 at top right, Player 4 at bottom left, Player 1 at bottom right.');
+	show(brand, setup); show(matchSummary, setup); show(playerLabel, setup); show(seating, setup);
+	show(boardSlot, playing);
 	show(eyebrow, setup); show(title, !playing); show(description, setup || paused || ready || counting || results);
 	show(rules, setup); show(choices, setup); show(countdown, counting); show(target, playing && presentation.kind !== 'blank');
 	show(nearPrompt, playing && (presentation.prompt !== '' || answerFeedback !== null));
 	show(farPrompt, playing && (presentation.prompt !== '' || answerFeedback !== null));
-	show(timing, playing || counting); show(scoreTable, results); show(start, setup); show(resume, paused);
+	show(readyStatus, ready || roundResults);
+	const readyText = `${state.ready.length} / ${state.players.length} ready · Tap your pad`;
+	if (readyStatus.textContent !== readyText) readyStatus.textContent = readyText;
+	show(timing, playing || counting || ready); show(scoreTable, results); show(start, setup); show(resume, paused);
 	show(rematch, matchResults); show(end, paused || matchResults); show(actions, setup || paused || matchResults);
 	show(openSettings, setup && previewMatch === undefined);
 	show(pause, !setup && !paused && !matchResults);
@@ -266,9 +313,8 @@ const render = function(): void {
 	start.disabled = !layoutReady(); resume.disabled = !layoutReady(); rematch.disabled = !layoutReady();
 	for (const {count, choice} of playerChoices) choice.setAttribute('aria-pressed', String(count === state.players.length));
 	countdown.textContent = String(state.countdown);
-	timing.textContent = `ROUND ${state.round} / ${game.match.rounds} · ${(state.remaining / 1000).toFixed(1)}s`;
+	timing.textContent = `ROUND ${state.round} / ${game.match.rounds} · ${Math.ceil(state.remaining / 1000)}s`;
 	table.dataset.board = playing ? presentation.kind : '';
-	table.dataset.prompt = playing && (presentation.prompt !== '' || answerFeedback !== null) ? 'both' : '';
 	const promptText = answerFeedback?.message ?? presentation.prompt;
 	if (nearPrompt.textContent !== promptText) nearPrompt.textContent = promptText;
 	if (farPrompt.textContent !== promptText) farPrompt.textContent = promptText;
@@ -277,18 +323,20 @@ const render = function(): void {
 	paintBoard(playing ? presentation : {kind: 'blank', prompt: ''}, answerFeedback);
 	hint.textContent = !adequateViewport() ? 'Rotate or use a larger screen to play. Minimum 320 × 480 portrait or 560 × 320 landscape.'
 		: !settled ? 'Waiting for the layout to settle…' : !focused || document.hidden ? 'Return to this window to continue.'
-			: setup && state.players.length === 4 ? 'For four players, landscape gives everyone more room.' : '';
+			: '';
 	show(hint, hint.textContent !== '');
 	for (const control of controls) {
 		const active = state.players.includes(control.player);
 		show(control.element, active && !setup);
-		control.element.setAttribute('aria-disabled', String(!layoutReady() || !(ready || (playing && answerFeedback?.delta !== 1) || roundResults)));
-		show(control.score, active && !setup);
-		control.score.textContent = String(state.scores.round[control.player]);
+		const blocked = playing && state.stimulus?.blocked.includes(control.player) === true;
+		control.element.setAttribute('aria-disabled', String(!layoutReady() || !(ready || (playing && answerFeedback?.delta !== 1 && !blocked) || roundResults)));
+		control.score.textContent = String(state.scores.total[control.player]);
+		const roundPoints = state.scores.round[control.player];
+		control.roundScore.textContent = `${roundPoints > 0 ? '+' : ''}${roundPoints} this round`;
+		show(control.roundScore, playing);
 		const side = control.player === 2 || control.player === 3 ? 'far' : 'near';
 		control.element.dataset.side = side;
-		control.score.dataset.side = side;
-		control.status.textContent = ready || roundResults ? state.ready.includes(control.player) ? 'READY ✓' : 'PRESS TO READY' : `TOTAL ${state.scores.total[control.player]}`;
+		control.status.textContent = ready || roundResults ? state.ready.includes(control.player) ? 'READY ✓' : 'TAP TO READY' : paused ? 'PAUSED' : matchResults ? winners.includes(control.player) ? 'WINNER' : 'WELL PLAYED' : counting ? 'GET READY' : answerFeedback?.delta === 1 ? 'ANSWER REVEAL' : blocked ? 'WAIT FOR NEXT' : 'TAP TO ANSWER';
 		control.feedback.textContent = state.feedback?.player === control.player ? state.feedback.delta > 0 ? '+1' : '−1' : '';
 		control.element.dataset.feedback = state.feedback?.player === control.player ? state.feedback.delta > 0 ? 'positive' : 'negative' : '';
 		control.element.dataset.ready = String(state.ready.includes(control.player));
@@ -296,8 +344,9 @@ const render = function(): void {
 	}
 	for (const row of scoreRows) {
 		show(row.row, state.players.includes(row.player));
-		row.round.textContent = `Round ${state.scores.round[row.player]}`;
-		row.total.textContent = `Total ${state.scores.total[row.player]}`;
+		row.round.textContent = `${state.scores.round[row.player] > 0 ? '+' : ''}${state.scores.round[row.player]} round`;
+		row.total.textContent = String(state.scores.total[row.player]);
+		row.row.dataset.winner = String(matchResults && winners.includes(row.player));
 	}
 	show(farText, (!setup && !playing) || (playing && (presentation.prompt !== '' || answerFeedback !== null)));
 	show(farTitle, !playing);
@@ -306,11 +355,14 @@ const render = function(): void {
 	farCountdown.textContent = countdown.textContent;
 	farTiming.textContent = timing.textContent;
 	show(farDescription, !description.hidden);
-	show(farCountdown, counting); show(farTiming, counting); show(farScores, results);
+	show(farCountdown, counting); show(farTiming, counting || ready); show(farScores, results);
+	show(farReadyStatus, ready || roundResults);
+	farReadyStatus.textContent = readyStatus.textContent;
 	for (const {player, row, round, total} of farScoreRows) {
 		show(row, state.players.includes(player));
-		round.textContent = `Round ${state.scores.round[player]}`;
-		total.textContent = `Total ${state.scores.total[player]}`;
+		round.textContent = `${state.scores.round[player] > 0 ? '+' : ''}${state.scores.round[player]} round`;
+		total.textContent = String(state.scores.total[player]);
+		row.dataset.winner = String(matchResults && winners.includes(player));
 	}
 };
 const interrupt = function(reason: string): void { game.pause(reason); input.invalidate(); render(); };
