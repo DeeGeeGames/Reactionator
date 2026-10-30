@@ -44,3 +44,15 @@ For a local preview of each Circle difficulty without a difficulty picker, run `
 ## Acceptance
 
 Tests establish deterministic rules and lifecycle behavior. Rendering, on-page pointer handling, physical four-touch tracking, reach, accidental OS gestures, visibility and orientation changes, back-forward-cache navigation, and safe-area comfort must be checked on actual phones and tablets and recorded with device, OS, and browser. Visual direction, white opportunity frequency, penalties, and pace/feel require owner review. Numeric defaults remain draft values until that review. Do not treat automated checks as physical-device or creative acceptance; track remaining acceptance in GitHub issue #7.
+
+## Path and timing games
+
+Four additional selectable modes use `src/path-time-types.ts`, `src/temporal-challenges.ts`, `src/maze-graphs.ts`, and `src/path-time-renderer.ts`. Existing settings exclusions and mode IDs retain their meaning. `?mode-preview=mouse-to-cheese&difficulty=easy` (or `countdown-to-zero`, `colliding-shapes`, `corner-to-corner`, with any of the four difficulty IDs) uses the existing local preview route.
+
+Mouse to Cheese uses stable smooth strands, original mouse/cheese tokens, loops and dead ends. Crossings are nonjoining overpasses with a dark undercut; marked nodes are junctions. Graph identity, rather than raster intersections, defines reachability. True and false generators use the same strand and endpoint counts. Initial inspection times are 8/9/10/12 seconds and strand counts 4/5/6/8, increasing route length and density.
+
+Countdown to Zero uses starting digits 3/5/7/7 and equal slices of the 5/3.5/2.5/1.8-second hold, including one slice for zero. Timeout enters a blank gap. Colliding Shapes uses two circles, strict overlap (tangency is false), time-derived positions and independent speed/overlap controls. `motionSpeed` (diagram units/second) and `overlapMs` can override its presets; invalid combinations are rejected. Defaults are 25/35/45/60 units/second with 650/450/300/200 ms overlap windows.
+
+Corner to Corner uses 4×4/5×5/6×6/8×8 grids, 12/11/10/9-second claims and five scheduled graph states per claim. A seeded schedule can add a bridge, remove another, reconnect, and disconnect again; some schedules remain false. Claim identity and player lockouts persist through every change. Only orthogonal corridors connect. S/G markers identify the endpoints without relying on color.
+
+All these numbers, the crossing convention, graphics and changing-maze schedule are provisional web designs requiring owner visual/pace acceptance; they are not measurements of historical reference behavior. Only `advance` commits digits, positions and passages. Input judges that committed drawing, while the shared runner enforces deadlines, pause/fresh start and the two-second successful-answer reveal. Skipped frames never award unseen transient answers. Phone/tablet readability and simultaneous physical touches remain owner/device acceptance.

@@ -1,3 +1,4 @@
+import type {PathTimeConfig, PathTimeDrawing, PathTimeStimulus} from './path-time-types';
 export type Player = 1 | 2 | 3 | 4;
 export type Color = 'white' | 'red' | 'blue' | 'green';
 export const difficulties = ['easy', 'medium', 'hard', 'insane'] as const;
@@ -48,7 +49,7 @@ export type StaticPayload =
 	| {readonly kind: 'symbols'; readonly symbols: readonly SymbolKind[]}
 	| {readonly kind: 'color-word'; readonly word: WordColor; readonly ink: WordColor}
 	| {readonly kind: 'equation'; readonly operands: readonly number[]; readonly operators: readonly ('+' | '-' | '×')[]; readonly result: number};
-export type Config = PressOnWhiteConfig | CircleAmongSquaresConfig | StaticConfig;
+export type Config = PressOnWhiteConfig | CircleAmongSquaresConfig | StaticConfig | PathTimeConfig;
 export interface StimulusCore {
 	readonly mode: string;
 	readonly id: number;
@@ -82,8 +83,9 @@ export interface StaticClaimStimulus extends StimulusCore {
 	readonly payload: StaticPayload;
 }
 export type StaticStimulus = StaticGapStimulus | StaticClaimStimulus;
-export type Stimulus = PressOnWhiteStimulus | CircleStimulus | StaticStimulus;
+export type Stimulus = PressOnWhiteStimulus | CircleStimulus | StaticStimulus | PathTimeStimulus;
 export type Presentation =
+	| {readonly kind: 'path-time'; readonly prompt: string; readonly drawing: PathTimeDrawing}
 	| { readonly kind: 'swatch'; readonly color: Color | 'blank'; readonly prompt: string }
 	| { readonly kind: 'field'; readonly prompt: string; readonly sceneId: number; readonly circleVisible: boolean; readonly shapes: readonly FieldShape[] }
 	| { readonly kind: 'symbols'; readonly prompt: string; readonly symbols: readonly SymbolKind[] }

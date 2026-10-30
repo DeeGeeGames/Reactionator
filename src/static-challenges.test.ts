@@ -6,7 +6,7 @@ import {fiveDifferent, matchingPair, threeOfAKind} from './symbol-challenges';
 import {colorWord, trueEquation} from './text-challenges';
 
 const staticState = function(state: Stimulus | null): StaticStimulus {
-	if (state === null || state.mode === 'press-on-white' || state.mode === 'circle-among-squares') throw new Error('Expected static challenge');
+	if (state === null || (state.mode !== 'color-word' && state.mode !== 'true-equation' && state.mode !== 'three-of-a-kind' && state.mode !== 'five-different' && state.mode !== 'matching-pair')) throw new Error('Expected static challenge');
 	return state;
 };
 const staticModeId = function(mode: RuntimeMode) {

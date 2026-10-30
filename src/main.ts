@@ -1,3 +1,4 @@
+import {renderPathTime} from './path-time-renderer';
 import './style.css';
 import {circleDefaults} from './circle-among-squares';
 import {Game, type GameState, type Phase} from './game';
@@ -434,6 +435,15 @@ const paintBoard = function(presentation: Presentation, answerFeedback: GameStat
 			svg.append(figure);
 			target.append(svg);
 		}
+		return;
+	}
+	if (presentation.kind === 'path-time') {
+		fieldElements.clear(); fieldSceneId = null;
+		target.dataset.board = 'path-time'; target.dataset.color = 'blank';
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
+		const key = JSON.stringify(presentation.drawing);
+		if (target.dataset.content !== key || target.children.length === 0) target.replaceChildren(renderPathTime(presentation.drawing));
+		target.dataset.content = key;
 		return;
 	}
 	if (presentation.kind === 'field') {

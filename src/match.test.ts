@@ -59,9 +59,9 @@ describe('random mode cycles', function() {
 });
 
 describe('mixed matches', function() {
-	test('the default match reaches every new challenge before repeating a mode', function() {
+	test('a full registry cycle reaches every challenge before repeating a mode', function() {
 		let time = 0;
-		const game = new Game(function() { return time; }, function() { return 0.37; });
+		const game = new Game(function() { return time; }, function() { return 0.37; }, {rounds: listPlayableModes().length, modes: listPlayableModes().map(function(mode) { return defaultConfigFor(mode.id); })});
 		const played: string[] = [];
 		game.start();
 		for (let round = 0; round < game.match.modes.length; round += 1) {
@@ -82,7 +82,7 @@ describe('mixed matches', function() {
 
 	test('includes all playable registered defaults and defaults to ten rounds', function() {
 		const modes = listPlayableModes();
-		expect(modes.map(function(mode) { return mode.id; }).sort()).toEqual(['press-on-white', 'circle-among-squares', 'color-word', 'true-equation', 'three-of-a-kind', 'five-different', 'matching-pair'].sort());
+		expect(modes.map(function(mode) { return mode.id; }).sort()).toEqual(['press-on-white', 'circle-among-squares', 'color-word', 'true-equation', 'three-of-a-kind', 'five-different', 'matching-pair', 'mouse-to-cheese', 'countdown-to-zero', 'colliding-shapes', 'corner-to-corner'].sort());
 		for (const config of [defaults, circleDefaults]) {
 			const selected = defaultConfigFor(config.mode);
 			expect(selected).toEqual(config);

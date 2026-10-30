@@ -267,3 +267,10 @@ button:disabled { cursor: default; opacity: .45; }
 	.table[data-phase='setup'] .seat { line-height: 16px; }
 	.table[data-phase='setup'] .rules { margin-top: 4px; }
 }
+
+.table[data-phase='playing'] .target[data-board='path-time'] {
+	width: min(100cqi, 100cqb, 430px);
+	height: min(100cqi, 100cqb, 430px);
+	background: #101725;
+}
+.target[data-board='path-time'] svg { display: block; width: 100%; height: 100%; overflow: visible; }
