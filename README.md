@@ -1,6 +1,6 @@
 <img src="assets/icon.svg" width="64" height="64" alt="">
 
-# Reaction mix
+# Reactionator
 
 A shared-screen browser reaction game for 2–4 people around one phone or tablet. Ten rounds of 20 seconds by default; cumulative scores decide the winner, including shared wins and negative totals. Each round randomly draws from the playable modes that have not appeared in the current cycle. After every mode has appeared, the full pool becomes eligible again. Cycle boundaries can repeat the last mode of the preceding cycle. Five modes over fifteen rounds would produce three complete cycles, each in a random order.
 
@@ -22,7 +22,7 @@ bun run build
 
 The development server prints its URL and listens on all interfaces at port 3000. In the dev script, `--host` has to follow `index.html`; Bun ignores that server flag when it comes first. If port 3000 is taken, Bun prints the next free port. `dist/` is the static production output. `bun run preview` serves that output on `http://127.0.0.1:4173`. Access the development server from a device on the same LAN to test physical multitouch. Fullscreen is optional; keyboard/controller gameplay input, offline installation, and sound are outside this foundation. Setup buttons support Tab and Enter/Space.
 
-A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://david0178418.github.io/4player-reaction/`. Built asset URLs are relative to `index.html`, so the same output works at `/` and under `/4player-reaction/`.
+A successful CI run on `main` publishes `dist/` to GitHub Pages at `https://reactionator.deegeegames.com/`. Built asset URLs are relative to `index.html`, so the same output works at `/` and under a repository subpath.
 
 ## Controls and flow
 

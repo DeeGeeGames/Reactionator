@@ -1,4 +1,4 @@
-import {mkdir, rm} from 'node:fs/promises';
+import {copyFile, mkdir, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 
 export const buildBrowser = async function(options: {readonly entrypoint: string; readonly outdir: string}): Promise<void> {
@@ -21,4 +21,5 @@ if (import.meta.main) {
 		entrypoint: resolve(import.meta.dir, '../index.html'),
 		outdir: resolve(import.meta.dir, '../dist'),
 	});
+	await copyFile(resolve(import.meta.dir, '../CNAME'), resolve(import.meta.dir, '../dist/CNAME'));
 }
