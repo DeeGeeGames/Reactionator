@@ -1,6 +1,7 @@
 import type {PathTimeConfig, PathTimeDrawing, PathTimeStimulus} from './path-time-types';
 import type {CountryModeId, CountryPayload, CountryPresentation} from './country-types';
 import type {FigureModeId, FigurePayload, FigurePresentation} from './figure-types';
+import type {Puzzle, PuzzleModeId} from './static-puzzles/contracts';
 export type Player = 1 | 2 | 3 | 4;
 export type Color = 'white' | 'red' | 'blue' | 'green';
 export const difficulties = ['easy', 'medium', 'hard', 'insane'] as const;
@@ -40,7 +41,7 @@ export interface CircleAmongSquaresConfig extends SharedConfig {
 	readonly mode: 'circle-among-squares';
 	readonly difficulty: Difficulty;
 }
-export type StaticModeId = CountryModeId | FigureModeId | 'color-word' | 'true-equation' | 'three-of-a-kind' | 'five-different' | 'matching-pair';
+export type StaticModeId = PuzzleModeId | CountryModeId | FigureModeId | 'color-word' | 'true-equation' | 'three-of-a-kind' | 'five-different' | 'matching-pair';
 export type SymbolKind = 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'pentagon';
 export type WordColor = 'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'black' | 'white';
 export interface StaticConfig extends SharedConfig {
@@ -48,6 +49,7 @@ export interface StaticConfig extends SharedConfig {
 	readonly difficulty: Difficulty;
 }
 export type StaticPayload = CountryPayload | FigurePayload
+	| {readonly kind: 'static-puzzle'; readonly puzzle: Puzzle}
 	| {readonly kind: 'symbols'; readonly symbols: readonly SymbolKind[]}
 	| {readonly kind: 'color-word'; readonly word: WordColor; readonly ink: WordColor}
 	| {readonly kind: 'equation'; readonly operands: readonly number[]; readonly operators: readonly ('+' | '-' | '×')[]; readonly result: number};
@@ -88,6 +90,7 @@ export type StaticStimulus = StaticGapStimulus | StaticClaimStimulus;
 export type Stimulus = PressOnWhiteStimulus | CircleStimulus | StaticStimulus | PathTimeStimulus;
 export type Presentation = CountryPresentation | FigurePresentation
 	| {readonly kind: 'path-time'; readonly prompt: string; readonly drawing: PathTimeDrawing}
+	| {readonly kind: 'static-puzzle'; readonly prompt: string; readonly puzzle: Puzzle}
 	| { readonly kind: 'swatch'; readonly color: Color | 'blank'; readonly prompt: string }
 	| { readonly kind: 'field'; readonly prompt: string; readonly sceneId: number; readonly circleVisible: boolean; readonly shapes: readonly FieldShape[] }
 	| { readonly kind: 'symbols'; readonly prompt: string; readonly symbols: readonly SymbolKind[] }

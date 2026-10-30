@@ -17,6 +17,7 @@ interface StaticModeOptions {
 const payloadPresentation = function(payload: StaticPayload, prompt: string): Presentation {
 	if (payload.kind === 'country') return {kind: 'country', prompt, payload};
 	if (payload.kind === 'figures') return {kind: 'figures', prompt, payload};
+	if (payload.kind === 'static-puzzle') return {kind: 'static-puzzle', prompt, puzzle: payload.puzzle};
 	if (payload.kind === 'symbols') return {kind: 'symbols', prompt, symbols: payload.symbols};
 	if (payload.kind === 'color-word') return {kind: 'text', prompt, text: payload.word.toUpperCase(), ink: payload.ink};
 	const first = payload.operands[0];

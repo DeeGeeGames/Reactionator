@@ -1,5 +1,6 @@
 import {renderPathTime} from './path-time-renderer';
 import {paintFamilyBoard} from './family-renderer';
+import {appendPuzzleClaim, renderPuzzle} from './static-puzzles/render';
 import './style.css';
 import {circleDefaults} from './circle-among-squares';
 import {Game, type GameState, type Phase} from './game';
@@ -318,8 +319,20 @@ const render = function(): void {
 	timing.textContent = `ROUND ${state.round} / ${game.match.rounds} · ${Math.ceil(state.remaining / 1000)}s`;
 	table.dataset.board = playing ? presentation.kind : '';
 	const promptText = answerFeedback?.message ?? presentation.prompt;
-	if (nearPrompt.textContent !== promptText) nearPrompt.textContent = promptText;
-	if (farPrompt.textContent !== promptText) farPrompt.textContent = promptText;
+	if (presentation.kind === 'static-puzzle') {
+		const promptKey = JSON.stringify([promptText, presentation.puzzle, answerFeedback]);
+		for (const prompt of [nearPrompt, farPrompt]) {
+			if (prompt.dataset.puzzleContent === promptKey) continue;
+			prompt.textContent = promptText;
+			appendPuzzleClaim(prompt, presentation.puzzle, answerFeedback);
+			prompt.dataset.puzzleContent = promptKey;
+		}
+	} else {
+		for (const prompt of [nearPrompt, farPrompt]) {
+			delete prompt.dataset.puzzleContent;
+			if (prompt.textContent !== promptText) prompt.textContent = promptText;
+		}
+	}
 	nearPrompt.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 	farPrompt.dataset.result = nearPrompt.dataset.result;
 	paintBoard(playing ? presentation : {kind: 'blank', prompt: ''}, answerFeedback);
@@ -398,6 +411,17 @@ const paintBoard = function(presentation: Presentation, answerFeedback: GameStat
 	if (presentation.kind === 'country' || presentation.kind === 'figures') {
 		fieldElements.clear(); fieldSceneId = null;
 		paintFamilyBoard(target, presentation);
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
+		return;
+	}
+	if (presentation.kind === 'static-puzzle') {
+		const key = JSON.stringify([presentation.puzzle, answerFeedback]);
+		if (target.dataset.board === 'static-puzzle' && target.dataset.content === key) return;
+		target.replaceChildren(renderPuzzle(presentation.puzzle, answerFeedback));
+		fieldElements.clear(); fieldSceneId = null;
+		target.dataset.board = 'static-puzzle'; target.dataset.color = 'blank';
+		target.dataset.puzzle = presentation.puzzle.type;
+		target.dataset.content = key;
 		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
 		return;
 	}
