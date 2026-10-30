@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "4player-reaction",
+      "name": "reactionator",
       "dependencies": {
         "svg-pathdata": "9.0.0",
       },

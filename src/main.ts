@@ -64,7 +64,7 @@ const brand = make('div', 'brand-mark');
 brand.setAttribute('aria-hidden', 'true');
 for (const player of [3, 2, 4, 1]) brand.append(make('span', `player-${player}`));
 const eyebrow = make('p', 'eyebrow', 'ONE SCREEN. FAST HANDS.');
-const title = make('h1', 'title', 'Reaction mix');
+const title = make('h1', 'title', 'Reactionator');
 const description = make('p', 'description');
 const matchSummary = make('p', 'match-summary');
 const rules = make('details', 'rules');
@@ -288,7 +288,7 @@ const render = function(): void {
 	const answerFeedback = playing ? state.answerFeedback : null;
 	const presentation: Presentation = answerFeedback?.delta === 1 ? answerFeedback.presentation
 		: playing && state.stimulus !== null ? game.mode.present(state.stimulus) : {kind: 'blank', prompt: ''};
-	title.textContent = setup ? 'Reaction mix' : paused ? 'Paused'
+	title.textContent = setup ? 'Reactionator' : paused ? 'Paused'
 		: roundResults ? `Round ${state.round} complete` : matchResults
 			? `${winners.map(function(player) { return `P${player}`; }).join(' + ')} ${winners.length > 1 ? 'tie' : 'wins'}` : game.mode.name;
 	description.textContent = setup ? 'A battle of reflexes for 2–4 people.' : paused ? state.pauseReason
