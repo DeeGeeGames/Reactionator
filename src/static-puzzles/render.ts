@@ -20,28 +20,49 @@ const shape = function(parent: SVGElement, object: CountObject, x: number, y: nu
 const fieldPosition = function(index: number, columns: number, rows: number, width = 480, height = 180): readonly [number, number, number] {
 	return [10 + (index % columns + 0.5) * (width - 20) / columns, 10 + (Math.floor(index / columns) + 0.5) * (height - 20) / rows, Math.min((width - 20) / columns, (height - 20) / rows) * 0.4];
 };
-export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation | null): SVGSVGElement {
+export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation | null): SVGSVGElement | HTMLElement {
+	if (puzzle.type === 'alphabet-order') {
+		const board = document.createElement('div'); board.className = 'puzzle-alphabet-board';
+		for (const side of ['far', 'near']) {
+			const letters = document.createElement('div'); letters.className = `puzzle-alphabet ${side === 'far' ? 'far-text' : ''}`;
+			if (side === 'far') letters.setAttribute('aria-hidden', 'true');
+			for (const offset of [0, 13]) {
+				const row = document.createElement('span'); row.className = 'puzzle-alphabet-line';
+				for (const [index, letter] of puzzle.letters.slice(offset, offset + 13).entries()) {
+					const node = document.createElement('span'); node.textContent = letter;
+					if (feedback?.highlightedSymbols?.includes(offset + index)) node.className = 'puzzle-defect';
+					row.append(node);
+				}
+				letters.append(row);
+			}
+			board.append(letters);
+		}
+		return board;
+	}
 	const root = document.createElementNS(ns, 'svg');
-	const field = puzzle.type === 'sad-face' || puzzle.type === 'shape-count' || puzzle.type === 'plus-and-minus';
+	const field = puzzle.type === 'shape-count' || puzzle.type === 'plus-and-minus';
 	const illusion = puzzle.type === 'equal-t' || puzzle.type === 'equal-arrows' || puzzle.type === 'equal-track-bars';
-	root.setAttribute('viewBox', field ? '0 0 480 180' : illusion ? '0 0 600 180' : '0 0 300 300'); root.setAttribute('role', 'img'); root.setAttribute('aria-label', 'Reaction puzzle');
+	root.setAttribute('viewBox', puzzle.type === 'equal-arrows' ? '0 0 300 180' : illusion ? '0 0 600 180' : '0 0 300 300'); root.setAttribute('role', 'img'); root.setAttribute('aria-label', 'Reaction puzzle');
 	const highlight = function(parent: SVGElement, index: number, x: number, y: number, radius: number): void {
 		if (feedback?.highlightedSymbols?.includes(index)) svg('rect', {x: x - radius, y: y - radius, width: radius * 2, height: radius * 2, rx: 4, fill: 'none', stroke: '#fff', 'stroke-width': 2}, parent);
 	};
 	if (puzzle.type === 'sad-face') {
+		const rows = Math.ceil(puzzle.faces.length / puzzle.columns);
+		const width = puzzle.columns * 60; const height = rows * 60;
+		root.setAttribute('viewBox', `0 0 ${width} ${height}`);
 		for (const [index, face] of puzzle.faces.entries()) {
-			const [x, y, r] = fieldPosition(index, Math.ceil(puzzle.faces.length / 3), 3);
+			const [x, y, r] = fieldPosition(index, puzzle.columns, rows, width, height);
 			const group = svg('g', {transform: `translate(${x} ${y}) rotate(${face.rotation})`, stroke: face.color, 'stroke-width': 2.5, fill: 'none'}, root);
 			svg('circle', {cx: 0, cy: 0, r}, group);
 			for (const eye of [-0.33, 0.33]) svg('circle', {cx: r * eye, cy: -r * 0.25, r: r * 0.065, fill: face.color}, group);
 			svg('path', {d: face.sad ? `M ${-r * 0.5} ${r * 0.5} Q 0 ${-r * 0.2} ${r * 0.5} ${r * 0.5}` : `M ${-r * 0.5} ${r * 0.15} Q 0 ${r * 0.85} ${r * 0.5} ${r * 0.15}`}, group);
 			highlight(root, index, x, y, r + 3);
 		}
-	} else if (puzzle.type === 'shape-count' || puzzle.type === 'plus-and-minus') {
+	} else if (field) {
 		const count = puzzle.type === 'shape-count' ? puzzle.objects.length : puzzle.signs.length;
-		const columns = Math.ceil(count / 3); const rows = Math.ceil(count / columns);
+		const columns = Math.ceil(Math.sqrt(count)); const rows = Math.ceil(count / columns);
 		for (let index = 0; index < count; index++) {
-			const [x, y, r] = fieldPosition(index, columns, rows);
+			const [x, y, r] = fieldPosition(index, columns, rows, 300, 300);
 			if (puzzle.type === 'shape-count') {
 				const object = puzzle.objects[index]; if (object !== undefined) shape(root, object, x, y, r);
 			} else {
@@ -50,8 +71,6 @@ export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation
 			}
 			highlight(root, index, x, y, r + 2);
 		}
-	} else if (puzzle.type === 'alphabet-order') {
-		// Upright letter copies are rendered in the prompt regions, at a readable CSS size.
 	} else if (puzzle.type === 'three-in-a-row' || puzzle.type === 'four-in-a-line') {
 		const size = Math.min(270 / puzzle.columns, 270 / puzzle.rows);
 		const ox = (300 - puzzle.columns * size) / 2; const oy = (300 - puzzle.rows * size) / 2;
@@ -69,9 +88,9 @@ export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation
 			highlight(root, index, x, y, size * 0.43);
 		}
 	} else {
-		// Each edge sees an upright copy of the same numeric diagram, at one uniform scale.
-		for (const far of [false, true]) {
-			const group = svg('g', {transform: `translate(${far ? 0 : 300} 10) ${far ? 'rotate(180 150 80)' : ''}`}, root);
+		// Arrow lengths share one field; the other illusions retain their opposed views.
+		for (const far of puzzle.type === 'equal-arrows' ? [false] : [false, true]) {
+			const group = svg('g', {transform: `translate(${puzzle.type === 'equal-arrows' || far ? 0 : 300} 10) ${far ? 'rotate(180 150 80)' : ''}`}, root);
 			if (puzzle.type === 'equal-t') {
 				line(group, 150 - puzzle.barLength / 2, 5, 150 + puzzle.barLength / 2, 5);
 				line(group, 150, 5, 150, 5 + puzzle.stemLength);
@@ -93,7 +112,7 @@ export const renderPuzzle = function(puzzle: Puzzle, feedback: AnswerExplanation
 	return root;
 };
 
-export const appendPuzzleClaim = function(parent: HTMLElement, puzzle: Puzzle, feedback: AnswerExplanation | null): void {
+export const appendPuzzleClaim = function(parent: HTMLElement, puzzle: Puzzle): void {
 	if (puzzle.type === 'shape-count') {
 		const claim = document.createElement('span'); claim.className = 'puzzle-claim';
 		claim.append(`${puzzle.filter.color.toUpperCase()} `);
@@ -102,13 +121,5 @@ export const appendPuzzleClaim = function(parent: HTMLElement, puzzle: Puzzle, f
 		claim.append(sample, ` ${puzzle.operator} ${puzzle.count}`); parent.append(claim);
 	} else if (puzzle.type === 'plus-and-minus') {
 		const claim = document.createElement('span'); claim.className = 'puzzle-claim'; claim.textContent = puzzle.statement; parent.append(claim);
-	} else if (puzzle.type === 'alphabet-order') {
-		const letters = document.createElement('span'); letters.className = 'puzzle-alphabet';
-		for (const [index, letter] of puzzle.letters.entries()) {
-			const node = document.createElement('span'); node.textContent = letter;
-			if (feedback?.highlightedSymbols?.includes(index)) node.className = 'puzzle-defect';
-			letters.append(node);
-		}
-		parent.append(letters);
 	}
 };

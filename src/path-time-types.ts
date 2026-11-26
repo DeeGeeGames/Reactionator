@@ -22,14 +22,16 @@ export interface PathGraph {
 	/** Curves crossing away from shared node IDs never join. Later strands bridge earlier ones. */
 	readonly crossing: 'bridge';
 }
-export interface MovingCircle extends Point { readonly radius: number }
+export type CollisionShape = 'circle' | 'square';
+// Existing circle fixtures omit shape; for a square, radius is its half-side length.
+export interface MovingCircle extends Point { readonly radius: number; readonly shape?: CollisionShape }
 export type PathTimeDrawing =
 	| {readonly kind: 'countdown'; readonly digit: number}
-	| {readonly kind: 'collision'; readonly circles: readonly [MovingCircle, MovingCircle]}
+	| {readonly kind: 'collision'; readonly circles: readonly [MovingCircle, MovingCircle]; readonly vertical?: boolean}
 	| {readonly kind: 'maze'; readonly graph: PathGraph; readonly tokens: 'mouse-cheese' | 'corners'};
 export type PathTimePlan =
 	| {readonly kind: 'countdown'; readonly startDigit: number; readonly holdMs: number}
-	| {readonly kind: 'collision'; readonly speed: number; readonly centerAt: number; readonly clearance: number; readonly radius: number; readonly vertical: boolean}
+	| {readonly kind: 'collision'; readonly speed: number; readonly centerAt: number; readonly clearance: number; readonly radius: number; readonly vertical: boolean; readonly shapes?: readonly [CollisionShape, CollisionShape]; readonly squareRadius?: number}
 	| {readonly kind: 'maze'; readonly tokens: 'mouse-cheese' | 'corners'; readonly frames: readonly {readonly at: number; readonly graph: PathGraph}[]};
 export interface PathTimeStimulus extends StimulusCore {
 	readonly mode: PathTimeId;

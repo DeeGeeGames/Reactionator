@@ -14,3 +14,4 @@ export type Puzzle =
 	| {readonly type: 'four-in-a-line' | 'three-in-a-row'; readonly columns: number; readonly rows: number; readonly cells: readonly Mark[]}
 	| {readonly type: 'alphabet-order'; readonly letters: readonly string[]}
 	| {readonly type: 'plus-and-minus'; readonly signs: readonly ('+' | '−')[]; readonly statement: 'More pluses' | 'More minuses' | 'The same number'};
+export type SadFacePuzzle = Extract<Puzzle, {type: 'sad-face'}>;
