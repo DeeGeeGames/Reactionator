@@ -41,23 +41,26 @@ export const paintFamilyBoard = function(target: HTMLElement, presentation: Coun
 	const key = JSON.stringify(presentation);
 	if (target.dataset.content === key && target.dataset.board === presentation.kind) return;
 	target.replaceChildren(); target.dataset.board = presentation.kind; target.dataset.color = 'blank'; target.dataset.content = key;
+	if (presentation.kind === 'figures') {
+		const {figures, columns, rows} = presentation.payload;
+		const grid = document.createElement('div'); grid.className = 'figure-grid';
+		grid.style.setProperty('--figure-columns', String(columns)); grid.style.setProperty('--figure-rows', String(rows));
+		grid.style.aspectRatio = `${columns} / ${rows}`;
+		for (const figure of figures) grid.append(figureDrawing(figure));
+		target.append(grid);
+		return;
+	}
 	for (const side of ['far', 'near']) {
 		const copy = document.createElement('div'); copy.className = `family-copy family-${side}`;
 		if (side === 'far') copy.setAttribute('aria-hidden', 'true');
-		if (presentation.kind === 'country') {
-			const {left, right, question} = presentation.payload;
-			copy.append(label(left.name, 'country-name'));
-			if (question === 'matching-flag') copy.append(flagDrawing(right.flag));
-			else if (question === 'matching-capital') copy.append(label(right.capital, 'country-name'));
-			else {
-				copy.prepend(label(question === 'larger-population' ? 'POPULATION' : 'LAND AREA', 'country-metric'));
-				copy.append(label('>', 'country-comparator'), label(right.name, 'country-name'));
-			}
-		} else {
-			const {figures, columns, rows} = presentation.payload;
-			copy.classList.add('figure-grid');
-			copy.style.setProperty('--figure-columns', String(columns)); copy.style.setProperty('--figure-rows', String(rows));
-			for (const figure of figures) copy.append(figureDrawing(figure));
+		const {left, right, question} = presentation.payload;
+		copy.append(label(left.name, 'country-name'));
+		if (question === 'matching-flag') copy.append(flagDrawing(right.flag));
+		else if (question === 'matching-capital') copy.append(label(right.capital, 'country-name'));
+		else {
+			copy.classList.add('country-comparison');
+			copy.prepend(label(question === 'larger-population' ? 'POPULATION' : 'LAND AREA', 'country-metric'));
+			copy.append(label('>', 'country-comparator'), label(right.name, 'country-name'));
 		}
 		target.append(copy);
 	}

@@ -23,7 +23,7 @@ const drawGraph = function(svg: SVGSVGElement, graph: PathGraph, tokens: 'mouse-
 		const c = edge.curve;
 		const d = `M${from.x} ${from.y} ` + (c === undefined ? `L${to.x} ${to.y}` : `C${c[0].x} ${c[0].y} ${c[1].x} ${c[1].y} ${to.x} ${to.y}`);
 		// Explicit nonjoining crossings: dark undercut and bright overpass.
-		svg.append(element('path', {d, fill: 'none', stroke: '#101725', 'stroke-width': tokens === 'mouse-cheese' ? 3.8 : 3.5, 'stroke-linecap': 'round'}), element('path', {d, fill: 'none', stroke: '#ecf0f8', 'stroke-width': tokens === 'mouse-cheese' ? 1.2 : 1.7, 'stroke-linecap': 'round'}));
+		svg.append(element('path', {d, fill: 'none', stroke: 'var(--board-surface)', 'stroke-width': tokens === 'mouse-cheese' ? 3.8 : 3.5, 'stroke-linecap': 'round'}), element('path', {d, fill: 'none', stroke: '#ecf0f8', 'stroke-width': tokens === 'mouse-cheese' ? 1.2 : 1.7, 'stroke-linecap': 'round'}));
 	}
 	for (const node of graph.nodes) svg.append(element('circle', {cx: node.x, cy: node.y, r: tokens === 'mouse-cheese' ? 0.8 : 1.2, fill: '#ecf0f8'}));
 	for (const [id, goal] of [[graph.start, false], [graph.goal, true]] as const) {
@@ -41,8 +41,20 @@ const drawGraph = function(svg: SVGSVGElement, graph: PathGraph, tokens: 'mouse-
 	}
 };
 export const renderPathTime = function(drawing: PathTimeDrawing): SVGSVGElement {
-	const svg = element('svg', {viewBox: '0 0 100 100', role: 'img', 'aria-label': drawing.kind === 'collision' ? 'Two moving circles' : 'Path puzzle'});
+	const svg = element('svg', {viewBox: drawing.kind === 'maze' ? '-6 -6 112 112' : '0 0 100 100', role: 'img', 'aria-label': drawing.kind === 'collision' ? 'Two moving shapes passing behind a central bar' : 'Path puzzle'});
 	if (drawing.kind === 'maze') drawGraph(svg, drawing.graph, drawing.tokens);
-	if (drawing.kind === 'collision') for (const [i, circle] of drawing.circles.entries()) svg.append(element('circle', {cx: circle.x, cy: circle.y, r: circle.radius, fill: i === 0 ? '#ff7d79' : '#52bce8', 'fill-opacity': 0.82, stroke: '#ecf0f8', 'stroke-width': 0.5}));
+	if (drawing.kind === 'collision') {
+		for (const [i, shape] of drawing.circles.entries()) {
+			const color = {fill: i === 0 ? '#ff7d79' : '#52bce8', 'data-collision-shape': shape.shape ?? 'circle'};
+			svg.append(shape.shape === 'square'
+				? element('rect', {...color, x: shape.x - shape.radius, y: shape.y - shape.radius, width: shape.radius * 2, height: shape.radius * 2})
+				: element('circle', {...color, cx: shape.x, cy: shape.y, r: shape.radius}));
+		}
+		// Draw last and fully opaque: both approaching silhouettes disappear behind
+		// the bar, including the contact region, without revealing the live answer.
+		svg.append(element('rect', {x: drawing.vertical ? 0 : 34, y: drawing.vertical ? 34 : 0,
+			width: drawing.vertical ? 100 : 32, height: drawing.vertical ? 32 : 100,
+			fill: '#687181', 'data-occluder': 'true'}));
+	}
 	return svg;
 };

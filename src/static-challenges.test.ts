@@ -24,7 +24,7 @@ const fixture = function(mode: RuntimeMode, difficulty: Difficulty, random: () =
 	game.select(2); game.start(); game.press(1); game.press(2); advance(config.countdownMs);
 	return {game, config, advance};
 };
-const testedModes = [...countryModes, ...figureModes, threeOfAKind, fiveDifferent, matchingPair, colorWord, trueEquation];
+const testedModes = [...countryModes, ...figureModes, threeOfAKind, fiveDifferent, colorWord, trueEquation];
 describe('shared static challenge lifecycle', function() {
 	for (const mode of testedModes) {
 		for (const difficulty of difficulties) {

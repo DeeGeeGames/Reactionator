@@ -36,18 +36,24 @@ for (const difficulty of difficulties) {
 		} else expect(comparisonPairs(question, difficulty).length).toBeGreaterThan(0);
 	});
 	for (const question of figureIds) test(`${question} ${difficulty} seeded tags and dimensions`, function() {
-		const rng = random(72); let truths = 0;
+		const rng = random(72); let truths = 0; const seen = new Set<string>();
 		for (let i = 0; i < 150; i++) {
 			const p = generateFigures(question, difficulty, rng); truths += Number(figureClaimTrue(p));
+			for (const figure of p.figures) seen.add(figure.id);
 			if (question === 'panda-in-group') { expect([p.columns, p.rows]).toEqual([...pandaGrids[difficulty]]); expect(p.figures.length).toBe(p.columns * p.rows); expect(p.figures.filter(function(f) { return f.id === 'panda'; }).length).toBeLessThanOrEqual(1); }
 		}
 		expect(truths).toBeGreaterThan(40); expect(truths).toBeLessThan(110);
+		if (question !== 'panda-in-group') expect(seen.size).toBeGreaterThanOrEqual(18);
 	});
-	for (const tag of ['animal', 'canFly', 'madeByPeople'] as const) for (const truth of [true, false]) expect(figurePool(tag, difficulty, truth).length).toBeGreaterThan(0);
+	for (const tag of ['animal', 'canFly', 'madeByPeople'] as const) for (const truth of [true, false]) expect(figurePool(tag, difficulty, truth).length).toBeGreaterThanOrEqual(6);
 }
 test('every original figure has independently expected classification tags', function() {
-	const expected: Readonly<Record<FigureTag, readonly string[]>> = {animal: ['sparrow','butterfly','bat','dog','cat','fish','panda','rabbit','bear'], canFly: ['sparrow','butterfly','bat','plane','helicopter'], madeByPeople: ['plane','helicopter','hammer','cup','chair','bicycle']};
-	expect(figures.length).toBeGreaterThanOrEqual(16);
+	const expected: Readonly<Record<FigureTag, readonly string[]>> = {
+		animal: ['sparrow','butterfly','bat','dog','cat','fish','panda','rabbit','bear','duck','owl','dragonfly','bee','deer','frog','elephant','turtle','penguin','crab'],
+		canFly: ['sparrow','butterfly','bat','plane','helicopter','duck','owl','dragonfly','bee','rocket'],
+		madeByPeople: ['plane','helicopter','hammer','cup','chair','bicycle','motorcycle','sailboat','guitar','scissors','backpack','rocket'],
+	};
+	expect(figures.length).toBeGreaterThanOrEqual(36);
 	const questions = {animal: 'animal-silhouette', canFly: 'flying-silhouette', madeByPeople: 'made-by-people'} as const;
 	for (const figure of figures) for (const tag of ['animal', 'canFly', 'madeByPeople'] as const) {
 		const truth = expected[tag].includes(figure.id);

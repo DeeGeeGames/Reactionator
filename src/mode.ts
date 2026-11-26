@@ -42,7 +42,8 @@ export interface CircleAmongSquaresConfig extends SharedConfig {
 	readonly difficulty: Difficulty;
 }
 export type StaticModeId = PuzzleModeId | CountryModeId | FigureModeId | 'color-word' | 'true-equation' | 'three-of-a-kind' | 'five-different' | 'matching-pair';
-export type SymbolKind = 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'pentagon';
+export type SymbolKind = 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'pentagon'
+	| 'camera' | 'pencil' | 'scissors' | 'apple' | 'guitar' | 'lightbulb' | 'envelope' | 'shoe' | 'teapot' | 'rocket';
 export type WordColor = 'red' | 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'black' | 'white';
 export interface StaticConfig extends SharedConfig {
 	readonly mode: StaticModeId;
@@ -88,7 +89,16 @@ export interface StaticClaimStimulus extends StimulusCore {
 }
 export type StaticStimulus = StaticGapStimulus | StaticClaimStimulus;
 export type Stimulus = PressOnWhiteStimulus | CircleStimulus | StaticStimulus | PathTimeStimulus;
+export interface ScrollingSymbol {
+	readonly id: string;
+	readonly kind: SymbolKind;
+	readonly row: 0 | 1;
+	readonly artIndex: number;
+	readonly x: number;
+	readonly fullyVisible: boolean;
+}
 export type Presentation = CountryPresentation | FigurePresentation
+	| {readonly kind: 'scrolling-symbols'; readonly prompt: string; readonly items: readonly ScrollingSymbol[]}
 	| {readonly kind: 'path-time'; readonly prompt: string; readonly drawing: PathTimeDrawing}
 	| {readonly kind: 'static-puzzle'; readonly prompt: string; readonly puzzle: Puzzle}
 	| { readonly kind: 'swatch'; readonly color: Color | 'blank'; readonly prompt: string }

@@ -2,6 +2,7 @@ import {sample, type Difficulty} from '../mode';
 import type {CountObject, Puzzle, PuzzleModeId} from './contracts';
 import {generateFourBoard, generateThreeBoard} from './boards';
 import {integer, pick, shuffle} from './random';
+import {createFaces} from './faces';
 export const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // Ticket presets are provisional review values, not historical measurements.
 const level: Readonly<Record<Difficulty, number>> = {easy: 0, medium: 1, hard: 2, insane: 3};
@@ -13,14 +14,8 @@ const atLevel = function<T>(values: readonly [T, T, T, T], difficulty: Difficult
 export const generatePuzzle = function(id: PuzzleModeId, difficulty: Difficulty, random: () => number): Puzzle {
 	if (id === 'three-in-a-row') return generateThreeBoard(difficulty, random);
 	if (id === 'four-in-a-line') return generateFourBoard(difficulty, random);
+	if (id === 'sad-face') return createFaces(random);
 	const truth = sample(random) < 0.5;
-	if (id === 'sad-face') {
-		const [columns, rows] = atLevel([[3, 3], [4, 4], [5, 4], [6, 5]] as const, difficulty);
-		const target = integer(columns * rows, random);
-		return {type: id, columns, faces: Array.from({length: columns * rows}, function(_, index) {
-			return {sad: truth && index === target, rotation: pick(difficulty === 'easy' ? [0, 180] : [0, 45, 90, 135, 180, 225, 270, 315], random), color: pick(['#ff7a72', '#ffc857', '#43c8b8', '#69a9ff', '#b896ff'], random)};
-		})};
-	}
 	if (id === 'shape-count') {
 		const objects = Array.from({length: atLevel([8, 14, 20, 28], difficulty)}, function(): CountObject {
 			return {shape: pick(['circle', 'square', 'triangle'] as const, random), color: pick(['red', 'blue', 'green'] as const, random)};

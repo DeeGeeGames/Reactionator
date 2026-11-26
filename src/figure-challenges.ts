@@ -5,9 +5,10 @@ import {figures} from './silhouettes';
 import {createStaticMode} from './static-challenges';
 export const figureTags = {'animal-silhouette': 'animal', 'flying-silhouette': 'canFly', 'made-by-people': 'madeByPeople'} as const;
 export const pandaGrids: Readonly<Record<Difficulty, readonly [number, number]>> = {easy: [3, 3], medium: [4, 4], hard: [5, 4], insane: [6, 5]};
+const pandaDistractorIds = ['sparrow', 'butterfly', 'bat', 'dog', 'cat', 'fish', 'rabbit', 'bear'];
 export const figurePool = function(tag: FigureTag, difficulty: Difficulty, truth: boolean): readonly Figure[] {
-	const easy = ['sparrow', 'dog', 'fish', 'plane', 'hammer', 'tree', 'cup'];
-	const near = ['sparrow', 'bat', 'butterfly', 'plane', 'helicopter', 'fish', 'bicycle', 'tree', 'cat', 'bear', 'panda'];
+	const easy = ['sparrow', 'dog', 'fish', 'plane', 'hammer', 'tree', 'cup', 'duck', 'owl', 'bee', 'deer', 'frog', 'elephant', 'turtle', 'penguin', 'motorcycle', 'sailboat', 'guitar', 'backpack', 'rocket', 'mushroom', 'cactus', 'leaf'];
+	const near = ['sparrow', 'bat', 'butterfly', 'plane', 'helicopter', 'fish', 'bicycle', 'tree', 'cat', 'bear', 'panda', 'duck', 'owl', 'dragonfly', 'bee', 'deer', 'frog', 'turtle', 'penguin', 'crab', 'motorcycle', 'sailboat', 'scissors', 'backpack', 'rocket', 'mushroom', 'leaf', 'snowflake'];
 	return figures.filter(function(figure) { return figure[tag] === truth && (difficulty === 'easy' ? easy.includes(figure.id) : difficulty === 'medium' ? true : near.includes(figure.id)); });
 };
 export const figureClaimTrue = function(payload: FigurePayload): boolean {
@@ -21,7 +22,7 @@ export const generateFigures = function(question: FigureModeId, difficulty: Diff
 	if (question !== 'panda-in-group') return {kind: 'figures', question, columns: 1, rows: 1, figures: [choose(figurePool(figureTags[question], difficulty, truth), random)]};
 	const [columns, rows] = pandaGrids[difficulty];
 	const target = Math.floor(sample(random) * columns * rows);
-	const distractors = figures.filter(function(figure) { return figure.animal && figure.id !== 'panda' && (difficulty !== 'easy' || figure.id !== 'bear'); });
+	const distractors = figures.filter(function(figure) { return pandaDistractorIds.includes(figure.id) && (difficulty !== 'easy' || figure.id !== 'bear'); });
 	const panda = figures.find(function(figure) { return figure.id === 'panda'; });
 	if (panda === undefined) throw new Error('Missing panda');
 	return {kind: 'figures', question, columns, rows, figures: Array.from({length: columns * rows}, function(_, i) {

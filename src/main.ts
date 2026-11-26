@@ -1,4 +1,6 @@
 import {renderPathTime} from './path-time-renderer';
+import {drawSymbol} from './symbol-art';
+import {paintScrollingBoard} from './scrolling-renderer';
 import {paintFamilyBoard} from './family-renderer';
 import {appendPuzzleClaim, renderPuzzle} from './static-puzzles/render';
 import './style.css';
@@ -324,7 +326,7 @@ const render = function(): void {
 		for (const prompt of [nearPrompt, farPrompt]) {
 			if (prompt.dataset.puzzleContent === promptKey) continue;
 			prompt.textContent = promptText;
-			appendPuzzleClaim(prompt, presentation.puzzle, answerFeedback);
+			appendPuzzleClaim(prompt, presentation.puzzle);
 			prompt.dataset.puzzleContent = promptKey;
 		}
 	} else {
@@ -408,6 +410,12 @@ let frameId = 0;
 let fieldSceneId: number | null = null;
 const fieldElements = new Map<string, HTMLSpanElement>();
 const paintBoard = function(presentation: Presentation, answerFeedback: GameState['answerFeedback']): void {
+	if (presentation.kind === 'scrolling-symbols') {
+		fieldElements.clear(); fieldSceneId = null;
+		paintScrollingBoard(target, presentation.items, answerFeedback?.highlightedSymbols ?? []);
+		target.dataset.result = answerFeedback === null ? '' : answerFeedback.delta > 0 ? 'correct' : 'incorrect';
+		return;
+	}
 	if (presentation.kind === 'country' || presentation.kind === 'figures') {
 		fieldElements.clear(); fieldSceneId = null;
 		paintFamilyBoard(target, presentation);
@@ -448,22 +456,8 @@ const paintBoard = function(presentation: Presentation, answerFeedback: GameStat
 		}
 		target.style.setProperty('--symbol-columns', String(Math.ceil(presentation.symbols.length / 2)));
 		for (const [index, shape] of presentation.symbols.entries()) {
-			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-			svg.setAttribute('viewBox', '0 0 100 100');
-			svg.dataset.symbol = shape;
+			const svg = drawSymbol(shape, index);
 			svg.dataset.highlighted = String(answerFeedback?.highlightedSymbols?.includes(index) ?? false);
-			const figure = document.createElementNS('http://www.w3.org/2000/svg', shape === 'circle' ? 'circle' : 'polygon');
-			if (shape === 'circle') {
-				figure.setAttribute('cx', '50'); figure.setAttribute('cy', '50'); figure.setAttribute('r', '37');
-			} else {
-				const points = {
-					square: '15,15 85,15 85,85 15,85', triangle: '50,10 92,85 8,85',
-					diamond: '50,5 95,50 50,95 5,50', pentagon: '50,5 93,36 77,87 23,87 7,36',
-					star: '50,5 61,35 95,36 69,57 78,90 50,71 22,90 31,57 5,36 39,35',
-				};
-				figure.setAttribute('points', points[shape]);
-			}
-			svg.append(figure);
 			target.append(svg);
 		}
 		return;

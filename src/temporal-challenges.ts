@@ -15,7 +15,13 @@ export const temporalPresets: Readonly<Record<Difficulty, {readonly startDigit: 
 };
 export const overlapping = function(circles: readonly [MovingCircle, MovingCircle]): boolean {
 	const [a, b] = circles;
-	return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
+	if (a.shape !== 'square' && b.shape !== 'square') return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
+	if (a.shape === 'square' && b.shape === 'square') return Math.abs(a.x - b.x) < a.radius + b.radius && Math.abs(a.y - b.y) < a.radius + b.radius;
+	const square = a.shape === 'square' ? a : b;
+	const circle = a.shape === 'square' ? b : a;
+	const dx = Math.max(0, Math.abs(circle.x - square.x) - square.radius);
+	const dy = Math.max(0, Math.abs(circle.y - square.y) - square.radius);
+	return dx ** 2 + dy ** 2 < circle.radius ** 2;
 };
 export const drawingTrue = function(drawing: PathTimeDrawing): boolean {
 	if (drawing.kind === 'countdown') return drawing.digit === 0;
@@ -33,9 +39,13 @@ export const commitDrawing = function(plan: PathTimePlan, elapsed: number): Path
 		};
 		const offset = (elapsed - plan.centerAt) * plan.speed / 1000;
 		const first = fold(50 + offset); const second = fold(50 - offset);
-		return {kind: 'collision', circles: [
-			{x: plan.vertical ? 50 - plan.clearance / 2 : first, y: plan.vertical ? first : 50 - plan.clearance / 2, radius: plan.radius},
-			{x: plan.vertical ? 50 + plan.clearance / 2 : second, y: plan.vertical ? second : 50 + plan.clearance / 2, radius: plan.radius},
+		const shapeAt = function(index: 0 | 1): Pick<MovingCircle, 'radius' | 'shape'> {
+			const shape = plan.shapes?.[index];
+			return {radius: shape === 'square' ? plan.squareRadius ?? plan.radius : plan.radius, ...(shape === undefined ? {} : {shape})};
+		};
+		return {kind: 'collision', vertical: plan.vertical, circles: [
+			{x: plan.vertical ? 50 - plan.clearance / 2 : first, y: plan.vertical ? first : 50 - plan.clearance / 2, ...shapeAt(0)},
+			{x: plan.vertical ? 50 + plan.clearance / 2 : second, y: plan.vertical ? second : 50 + plan.clearance / 2, ...shapeAt(1)},
 		]};
 	}
 	const frame = plan.frames.filter(function(frame) { return frame.at <= elapsed; }).at(-1) ?? plan.frames[0];
@@ -53,12 +63,18 @@ const makePlan = function(config: PathTimeConfig, random: () => number): {readon
 		const speed = config.motionSpeed ?? preset.speed;
 		const overlapMs = config.overlapMs ?? preset.overlapMs;
 		const radius = 12;
+		const travel = speed * overlapMs / 1000;
+		const squareRadius = travel / 2;
 		const connected = sample(random) < 0.7;
-		// Tune perpendicular clearance to keep speed and overlap duration independent.
-		const clearance = connected ? Math.sqrt((2 * radius) ** 2 - (speed * overlapMs / 1000) ** 2) : 2 * radius + 8;
+		// Circle-to-square contact uses the nearest square corner. At either end of
+		// the requested window, along-axis separation is travel, of which the square
+		// covers squareRadius. The remaining distance lies on the circle boundary.
+		const clearance = connected ? squareRadius + Math.sqrt(radius ** 2 - (travel - squareRadius) ** 2) : radius + squareRadius + 8;
 		const margin = 2 * radius / speed * 1000 + 100;
 		const centerAt = margin + sample(random) * Math.max(0, Math.min(hold - margin, 37 / speed * 1000) - margin);
-		return {hold, plan: {kind: 'collision', speed, radius, clearance, centerAt, vertical: sample(random) < 0.5}};
+		const vertical = sample(random) < 0.5;
+		return {hold, plan: {kind: 'collision', speed, radius, squareRadius, clearance, centerAt, vertical,
+			shapes: sample(random) < 0.5 ? ['circle', 'square'] : ['square', 'circle']}};
 	}
 	if (config.mode === 'mouse-to-cheese') return {hold: preset.mouseHoldMs, plan: {kind: 'maze', tokens: 'mouse-cheese', frames: [{at: 0, graph: mouseGraph(config.difficulty, random)}]}};
 	const hold = preset.mazeHoldMs;
@@ -82,7 +98,7 @@ export const createPathTimeMode = function(id: PathTimeId): RuntimeMode {
 	};
 	return defineMode<PathTimeConfig, PathTimeStimulus>({
 		id, name: names[id], defaults: pathTimeDefaults(id),
-		rules: [prompts[id], 'First eligible correct press: +1, followed by a 2-second answer reveal.', 'Wrong press: −1 once; that player stays blocked for this entire puzzle.', ...(id === 'mouse-to-cheese' ? ['Crossing strands pass over each other. Only marked junctions connect.'] : []), 'Missing a target costs nothing. Release before pressing again.'],
+		rules: [prompts[id], 'First eligible correct press: +1, followed by a 2-second answer reveal.', 'Wrong press: −1 once; that player stays blocked for this entire puzzle.', ...(id === 'mouse-to-cheese' ? ['Crossing strands pass over each other. Only marked junctions connect.'] : []), ...(id === 'colliding-shapes' ? ['The center bar hides the impact. Judge when the moving shapes overlap behind it.'] : []), 'Missing a target costs nothing. Release before pressing again.'],
 		isConfig: function(config: Config): config is PathTimeConfig { return config.mode === id; },
 		isStimulus: function(state: Stimulus): state is PathTimeStimulus { return state.mode === id; },
 		validate: function(config) {
@@ -107,7 +123,7 @@ export const createPathTimeMode = function(id: PathTimeId): RuntimeMode {
 		explain: function(state) {
 			const drawing = state.drawing;
 			if (drawing.kind === 'countdown') return {message: drawing.digit === 0 ? 'Zero is the target.' : `${drawing.digit} is not zero. Wait for the next countdown.`};
-			if (drawing.kind === 'collision') return {message: drawingTrue(drawing) ? 'The circles overlap.' : 'The circles are separate. Touching edges alone do not count.'};
+			if (drawing.kind === 'collision') return {message: drawingTrue(drawing) ? 'The shapes overlap behind the bar.' : 'The shapes were separate when you pressed. Touching edges alone do not count.'};
 			return {message: reachable(drawing.graph) ? 'The endpoints are connected.' : 'There is no continuous route between the endpoints.'};
 		},
 	});

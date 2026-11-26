@@ -4,7 +4,7 @@ import {difficulties, type Stimulus} from './mode';
 import {reachable, mouseGraph, cornerFrames} from './maze-graphs';
 import {createPathTimeMode, drawingTrue, overlapping, pathTimeDefaults, pathTimeIds, temporalPresets} from './temporal-challenges';
 import {claimHoldMs} from './static-challenges';
-import type {PathGraph, PathTimeStimulus} from './path-time-types';
+import type {MovingCircle, PathGraph, PathTimeConfig, PathTimeStimulus} from './path-time-types';
 const seeded = function(seed: number): (() => number) { let value = seed; return function() { value = (value * 1664525 + 1013904223) >>> 0; return value / 4294967296; }; };
 const narrow = function(state: Stimulus | null): PathTimeStimulus {
 	if (state === null || (state.mode !== 'mouse-to-cheese' && state.mode !== 'countdown-to-zero' && state.mode !== 'colliding-shapes' && state.mode !== 'corner-to-corner')) throw new Error('Expected path/time state');
@@ -62,6 +62,33 @@ describe('path and temporal modes', function() {
 	}
 	test('strict collision geometry: tangency and epsilon', function() {
 		for (const [distance, truth] of [[24, false], [24.000001, false], [23.999999, true]] as const) expect(overlapping([{x: 0, y: 0, radius: 12}, {x: distance, y: 0, radius: 12}])).toBe(truth);
+		const circle: MovingCircle = {x: 0, y: 0, radius: 12, shape: 'circle'};
+		for (const [x, y, truth] of [[18, 0, false], [18.000001, 0, false], [17.999999, 0, true], [15, 15, false], [14, 14, true]] as const) {
+			const square: MovingCircle = {x, y, radius: 6, shape: 'square'};
+			expect(overlapping([circle, square])).toBe(truth); expect(overlapping([square, circle])).toBe(truth);
+		}
+		for (const [distance, truth] of [[12, false], [12.000001, false], [11.999999, true]] as const) {
+			expect(overlapping([{x: 0, y: 0, radius: 6, shape: 'square'}, {x: distance, y: 0, radius: 6, shape: 'square'}])).toBe(truth);
+		}
+	});
+	test('mixed silhouettes retain the configured overlap window in either direction and order', function() {
+		const mode = createPathTimeMode('colliding-shapes');
+		const configs: readonly PathTimeConfig[] = [...difficulties.map(function(difficulty) { return pathTimeDefaults('colliding-shapes', difficulty); }),
+			{...pathTimeDefaults('colliding-shapes'), motionSpeed: 20, overlapMs: 100},
+			{...pathTimeDefaults('colliding-shapes'), motionSpeed: 100, overlapMs: 239}];
+		for (const config of configs) for (const vertical of [false, true]) for (const reversed of [false, true]) {
+			let draw = 0;
+			const values = [0.1, 0.3, vertical ? 0.1 : 0.9, reversed ? 0.9 : 0.1];
+			const first = narrow(mode.create(0, 1, mode.validate(config), function() { return values[draw++] ?? 0.1; }));
+			if (first.plan.kind !== 'collision' || first.drawing.kind !== 'collision') throw new Error('Expected collision');
+			expect(new Set(first.drawing.circles.map(function(shape) { return shape.shape; }))).toEqual(new Set(['circle', 'square']));
+			const half = (config.overlapMs ?? temporalPresets[config.difficulty].overlapMs) / 2;
+			for (const [offset, truth] of [[-half - 0.001, false], [-half + 0.001, true], [0, true], [half - 0.001, true], [half + 0.001, false]] as const) {
+				const committed = narrow(mode.advance(first, first.plan.centerAt + offset, config, seeded(1)));
+				expect(drawingTrue(committed.drawing)).toBe(truth);
+				expect(committed.id).toBe(first.id);
+			}
+		}
 	});
 	test('crossings do not join, explicit junctions do; diagonals do not invent passages', function() {
 		const graph: PathGraph = {crossing: 'bridge', start: 'a', goal: 'd', nodes: [{id: 'a', x: 0, y: 0}, {id: 'b', x: 10, y: 10}, {id: 'c', x: 0, y: 10}, {id: 'd', x: 10, y: 0}], edges: [{from: 'a', to: 'b'}, {from: 'c', to: 'd'}]};
